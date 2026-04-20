@@ -179,10 +179,6 @@ export default function StandingsPage() {
                 <p className="text-sm font-semibold">{miPosicion.nombre}</p>
               </div>
             </div>
-            <div className="text-right">
-              <p className="text-xs text-gray-500">Player ID</p>
-              <p className="font-mono text-sm">{miPosicion.player_id}</p>
-            </div>
           </div>
         </div>
       )}
@@ -197,13 +193,12 @@ export default function StandingsPage() {
           <div className="px-4 py-3 bg-gray-50 border-b flex justify-between text-sm font-semibold text-gray-600">
             <span className="w-12">Pos</span>
             <span className="flex-1">Jugador</span>
-            <span className="w-24 text-right">Player ID</span>
           </div>
           <div className="divide-y">
             {standings.map(s => (
               <div
                 key={s.player_id}
-                className={`px-4 py-3 flex justify-between items-center ${
+                className={`px-4 py-3 flex items-center ${
                   miPosicion?.player_id === s.player_id ? 'bg-primary/10 ring-1 ring-primary' : ''
                 }`}
               >
@@ -211,7 +206,6 @@ export default function StandingsPage() {
                   {getMedalla(s.posicion)}
                 </div>
                 <span className="flex-1 font-medium text-gray-800">{s.nombre}</span>
-                <span className="font-mono text-sm text-gray-500 w-24 text-right">{s.player_id}</span>
               </div>
             ))}
           </div>
