@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import Link from 'next/link'
 import { storage } from '@/utils/storage'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const [identificador, setIdentificador] = useState('')
@@ -57,8 +58,15 @@ export default function LoginPage() {
     <div className="min-h-screen flex flex-col justify-center px-5 py-10 bg-primary">
       <div className="items-center mb-10">
         <div className="flex justify-center">
-          <div className="w-40 h-40 bg-white rounded-full flex items-center justify-center shadow-lg mb-4">
-            <span className="text-6xl">🏆</span>
+          <div className="w-40 h-40   flex items-center justify-center ">
+            <Image
+              src="/logo.png"
+              alt="Logo Torneos"
+              width={160}
+              height={160}
+              className="object-cover"
+              priority
+            />
           </div>
         </div>
         <h1 className="text-3xl font-bold text-white text-center">Sistema de torneos</h1>
@@ -66,7 +74,7 @@ export default function LoginPage() {
 
       <div className="px-5">
         <p className="text-white text-center font-medium mb-3">Player ID o Teléfono</p>
-        
+
         <input
           type="tel"
           inputMode="numeric"
@@ -82,12 +90,13 @@ export default function LoginPage() {
         )}
 
         <button
-          onClick={buscarJugador}
-          disabled={isLoading}
-          className="w-full bg-secondary text-white py-3 rounded-xl font-bold text-lg mt-5 disabled:opacity-50 transition active:scale-95"
-        >
-          {isLoading ? 'Buscando...' : 'Iniciar sesión'}
-        </button>
+  onClick={buscarJugador}
+  disabled={isLoading}
+  className="w-full py-3 rounded-xl font-bold text-lg mt-5 disabled:opacity-50 transition active:scale-95"
+  style={{ backgroundColor: '#4F15E0', color: 'white' }}
+>
+  {isLoading ? 'Buscando...' : 'Iniciar sesión'}
+</button>
 
         <div className="mt-4 text-center">
           <Link href="/registro" className="text-white text-sm underline">

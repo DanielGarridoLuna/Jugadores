@@ -3,6 +3,9 @@ import './globals.css'
 export const metadata = {
   title: 'Torneos App - Jugadores',
   description: 'Plataforma para jugadores de torneos',
+  icons: {
+    icon: '/favicon.ico',
+  },
 }
 
 export const viewport = {
