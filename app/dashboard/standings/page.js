@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { storage } from '@/utils/storage'
-import { Trophy, Medal, TrendingUp } from 'lucide-react'
+import { Trophy, Medal, TrendingUp, Calendar } from 'lucide-react'
 
 export default function StandingsPage() {
   const playerId = storage.getItem('player_id')
@@ -33,11 +33,11 @@ export default function StandingsPage() {
   }
 
   const cargarEventos = useCallback(async (torneoId) => {
+    // Cargar TODOS los eventos (incluyendo archivados/pasados)
     const { data } = await supabase
       .from('eventos')
       .select('*')
       .eq('torneo_id', torneoId)
-      .eq('archivado', false)
       .order('fecha', { ascending: false })
 
     setEventos(data || [])
@@ -128,9 +128,11 @@ export default function StandingsPage() {
     <div className="p-4 pb-24">
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Standings</h1>
 
-      {torneos.length > 1 && (
-        <div className="mb-4 overflow-x-auto">
-          <div className="flex gap-2">
+      {/* Selector de Torneo */}
+      {torneos.length > 0 && (
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-600 mb-2">Torneo</label>
+          <div className="flex flex-wrap gap-2">
             {torneos.map(t => (
               <button
                 key={t.id}
@@ -148,9 +150,13 @@ export default function StandingsPage() {
         </div>
       )}
 
+      {/* Selector de Evento (TODOS, incluyendo pasados) */}
       {eventos.length > 0 && (
-        <div className="mb-4 overflow-x-auto">
-          <div className="flex gap-2">
+        <div className="mb-4">
+          <label className="block text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
+            <Calendar size={16} /> Evento
+          </label>
+          <div className="flex flex-wrap gap-2">
             {eventos.map(e => (
               <button
                 key={e.id}
@@ -168,13 +174,14 @@ export default function StandingsPage() {
         </div>
       )}
 
+      {/* Mi posición destacada (solo si estoy en este evento) */}
       {miPosicion && (
         <div className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-xl p-4 mb-4 border border-primary/20">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <TrendingUp size={24} className="text-primary" />
               <div>
-                <p className="text-xs text-gray-500">Tu posición</p>
+                <p className="text-xs text-gray-500">Tu posición en este evento</p>
                 <p className="text-2xl font-bold text-primary">#{miPosicion.posicion}</p>
                 <p className="text-sm font-semibold">{miPosicion.nombre}</p>
               </div>
@@ -183,10 +190,11 @@ export default function StandingsPage() {
         </div>
       )}
 
+      {/* Tabla de Standings */}
       {standings.length === 0 ? (
         <div className="bg-white rounded-xl p-8 text-center">
           <Trophy size={48} className="text-gray-300 mx-auto mb-3" />
-          <p className="text-gray-500">No hay standings disponibles</p>
+          <p className="text-gray-500">No hay standings disponibles para este evento</p>
         </div>
       ) : (
         <div className="bg-white rounded-xl shadow-md overflow-hidden">
@@ -209,6 +217,13 @@ export default function StandingsPage() {
               </div>
             ))}
           </div>
+        </div>
+      )}
+
+      {/* Mensaje si no hay eventos */}
+      {eventos.length === 0 && torneoSeleccionado && (
+        <div className="bg-white rounded-xl p-8 text-center">
+          <p className="text-gray-500">Este torneo no tiene eventos creados</p>
         </div>
       )}
     </div>
