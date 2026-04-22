@@ -13,6 +13,7 @@ const normalizarId = (valor) => {
 
 export default function RondaPage() {
   const playerId = storage.getItem('player_id')
+  const torneoGuardadoId = storage.getItem('torneo_seleccionado')
   
   const [torneos, setTorneos] = useState([])
   const [torneoSeleccionado, setTorneoSeleccionado] = useState(null)
@@ -35,8 +36,14 @@ export default function RondaPage() {
       .eq('activo', true)
 
     setTorneos(data || [])
+    
+    // Priorizar torneo guardado, si no, el primero
     if (data?.length > 0) {
-      setTorneoSeleccionado(data[0].id)
+      if (torneoGuardadoId && data.find(t => String(t.id) === String(torneoGuardadoId))) {
+        setTorneoSeleccionado(torneoGuardadoId)
+      } else {
+        setTorneoSeleccionado(data[0].id)
+      }
     }
     setCargando(false)
   }
@@ -239,7 +246,7 @@ export default function RondaPage() {
                 key={t.id}
                 onClick={() => setTorneoSeleccionado(t.id)}
                 className={`px-4 py-2 rounded-full text-sm whitespace-nowrap ${
-                  torneoSeleccionado === t.id
+                  String(torneoSeleccionado) === String(t.id)
                     ? 'bg-primary text-white'
                     : 'bg-white text-gray-700 border border-gray-200'
                 }`}
@@ -259,6 +266,11 @@ export default function RondaPage() {
 
       {eventoActual && (
         <>
+          <p className="text-sm text-gray-500 mb-3">
+            Torneo: <span className="font-semibold">
+              {torneos.find(t => String(t.id) === String(torneoSeleccionado))?.nombre}
+            </span>
+          </p>
           <p className="text-sm text-gray-500 mb-3">
             Evento: <span className="font-semibold">{eventoActual.fecha}</span>
           </p>
