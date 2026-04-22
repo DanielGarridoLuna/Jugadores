@@ -1,3 +1,5 @@
+'use client'
+
 import { Swords, Trophy, Users, AlertCircle } from 'lucide-react'
 
 const normalizarId = (valor) => {
@@ -31,6 +33,21 @@ export default function MatchCard({ match, onReport, userId, reportando = false,
     return <Swords size={14} />
   }
 
+  // Determinar colores de botones según estado
+  const getBotonColor = (esGanador) => {
+    if (match.confirmado && esGanador) return 'bg-green-600 text-white'
+    if (match.estado === 'conflicto' && esGanador) return 'border-2 border-red-500 text-red-500 bg-white'
+    if (esGanador) return 'border-2 border-green-600 text-green-600 bg-white'
+    return 'bg-gray-100 text-gray-700 border border-gray-300'
+  }
+
+  const getBotonEmpateColor = () => {
+    if (match.empate && match.confirmado) return 'bg-yellow-500 text-white'
+    if (match.estado === 'conflicto' && match.empate) return 'border-2 border-red-500 text-red-500 bg-white'
+    if (match.empate) return 'border-2 border-yellow-500 text-yellow-600 bg-white'
+    return 'bg-gray-100 text-gray-700 border border-gray-300'
+  }
+
   return (
     <div className="bg-white rounded-xl shadow-md overflow-hidden">
       <div className="bg-gray-50 px-4 py-2 flex justify-between items-center border-b">
@@ -52,7 +69,7 @@ export default function MatchCard({ match, onReport, userId, reportando = false,
         {!esBye ? (
           <div className="flex justify-center items-center gap-2 my-2">
             <div className="h-px flex-1 bg-gray-200"></div>
-            <Swords size={20} className="text-primary" />
+            <Swords size={20} className="text-[#4169E1]" />
             <div className="h-px flex-1 bg-gray-200"></div>
           </div>
         ) : (
@@ -80,21 +97,21 @@ export default function MatchCard({ match, onReport, userId, reportando = false,
             <button
               onClick={() => onReport(match, j1)}
               disabled={reportando}
-              className="flex-1 bg-primary text-white py-2 rounded-lg font-semibold text-sm disabled:opacity-50"
+              className={`flex-1 py-2 rounded-lg font-semibold text-sm disabled:opacity-50 ${getBotonColor(match.ganador_reportado_1 === j1 || match.ganador_final === j1)}`}
             >
               {match.jugador1_nombre?.split(' ')[0] || 'J1'}
             </button>
             <button
               onClick={() => onReport(match, j2)}
               disabled={reportando}
-              className="flex-1 bg-secondary text-white py-2 rounded-lg font-semibold text-sm disabled:opacity-50"
+              className={`flex-1 py-2 rounded-lg font-semibold text-sm disabled:opacity-50 ${getBotonColor(match.ganador_reportado_2 === j2 || match.ganador_final === j2)}`}
             >
               {match.jugador2_nombre?.split(' ')[0] || 'J2'}
             </button>
             <button
               onClick={() => onReport(match, 'empate')}
               disabled={reportando}
-              className="px-4 bg-gray-500 text-white py-2 rounded-lg font-semibold text-sm disabled:opacity-50"
+              className={`px-4 py-2 rounded-lg font-semibold text-sm disabled:opacity-50 ${getBotonEmpateColor()}`}
             >
               Empate
             </button>
