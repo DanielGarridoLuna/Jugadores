@@ -9,6 +9,7 @@ export default function StandingsPage() {
   const playerId = storage.getItem('player_id')
   
   const [torneos, setTorneos] = useState([])
+  const [torneosParticipados, setTorneosParticipados] = useState([])
   const [torneoSeleccionado, setTorneoSeleccionado] = useState(null)
   const [eventos, setEventos] = useState([])
   const [eventoSeleccionado, setEventoSeleccionado] = useState(null)
@@ -17,27 +18,57 @@ export default function StandingsPage() {
   const [miPosicion, setMiPosicion] = useState(null)
 
   useEffect(() => {
-    cargarTorneos()
+    cargarTorneosParticipados()
   }, [])
 
-  async function cargarTorneos() {
-    const { data } = await supabase
+  async function cargarTorneosParticipados() {
+    // 1. Obtener ID del jugador
+    const { data: jugador } = await supabase
+      .from('jugadores')
+      .select('id')
+      .eq('player_id', playerId)
+      .single()
+
+    if (!jugador) {
+      setCargando(false)
+      return
+    }
+
+    // 2. Obtener todos los torneos donde el jugador tiene inscripciones
+    const { data: inscripciones } = await supabase
+      .from('inscripciones')
+      .select('torneo_id')
+      .eq('jugador_id', jugador.id)
+
+    if (!inscripciones || inscripciones.length === 0) {
+      setCargando(false)
+      return
+    }
+
+    // IDs únicos de torneos donde participó
+    const torneosIds = [...new Set(inscripciones.map(i => i.torneo_id))]
+
+    // 3. Obtener detalles de esos torneos
+    const { data: torneosData } = await supabase
       .from('torneos')
       .select('*')
+      .in('id', torneosIds)
       .eq('activo', true)
+      .order('nombre', { ascending: true })
 
-    setTorneos(data || [])
-    if (data?.length > 0) {
-      setTorneoSeleccionado(data[0].id)
+    setTorneosParticipados(torneosData || [])
+    if (torneosData?.length > 0) {
+      setTorneoSeleccionado(torneosData[0].id)
     }
   }
 
   const cargarEventos = useCallback(async (torneoId) => {
-    // Cargar TODOS los eventos (incluyendo archivados/pasados)
+    // Cargar SOLO eventos NO archivados del torneo
     const { data } = await supabase
       .from('eventos')
       .select('*')
       .eq('torneo_id', torneoId)
+      .eq('archivado', false)
       .order('fecha', { ascending: false })
 
     setEventos(data || [])
@@ -124,16 +155,36 @@ export default function StandingsPage() {
     )
   }
 
+  // Si no ha participado en ningún torneo
+  if (torneosParticipados.length === 0) {
+    return (
+      <div className="p-4 pb-24">
+        <h1 className="text-2xl font-bold text-gray-800 mb-4">Standings</h1>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
+          <Trophy size={48} className="text-gray-300 mx-auto mb-3" />
+          <p className="text-yellow-700 font-medium mb-2">No has participado en ningún torneo</p>
+          <p className="text-yellow-600 text-sm">Inscríbete a un torneo para ver tus standings</p>
+          <button
+            onClick={() => window.location.href = '/dashboard'}
+            className="mt-4 bg-primary text-white px-6 py-2 rounded-lg text-sm"
+          >
+            Ver torneos
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-4 pb-24">
-      <h1 className="text-2xl font-bold text-gray-800 mb-4">Standings</h1>
+      <h1 className="text-2xl font-bold text-gray-800 mb-4">Mis Standings</h1>
 
-      {/* Selector de Torneo */}
-      {torneos.length > 0 && (
+      {/* Selector de Torneo (SOLO donde ha participado) */}
+      {torneosParticipados.length > 0 && (
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-600 mb-2">Torneo</label>
           <div className="flex flex-wrap gap-2">
-            {torneos.map(t => (
+            {torneosParticipados.map(t => (
               <button
                 key={t.id}
                 onClick={() => setTorneoSeleccionado(t.id)}
@@ -150,7 +201,7 @@ export default function StandingsPage() {
         </div>
       )}
 
-      {/* Selector de Evento (TODOS, incluyendo pasados) */}
+      {/* Selector de Evento (SOLO NO ARCHIVADOS) */}
       {eventos.length > 0 && (
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-600 mb-2 flex items-center gap-2">
@@ -223,7 +274,7 @@ export default function StandingsPage() {
       {/* Mensaje si no hay eventos */}
       {eventos.length === 0 && torneoSeleccionado && (
         <div className="bg-white rounded-xl p-8 text-center">
-          <p className="text-gray-500">Este torneo no tiene eventos creados</p>
+          <p className="text-gray-500">Este torneo no tiene eventos activos</p>
         </div>
       )}
     </div>
