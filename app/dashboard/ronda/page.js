@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { storage } from '@/utils/storage'
 import MatchCard from '@/components/MatchCard'
 import SelectorRonda from '@/components/SelectorRonda'
+import { useRouter } from 'next/navigation'
 
 const normalizarId = (valor) => {
   if (!valor || valor === 'null' || valor === 'undefined') return null
@@ -12,11 +13,13 @@ const normalizarId = (valor) => {
 }
 
 export default function RondaPage() {
+  const router = useRouter()
   const playerId = storage.getItem('player_id')
   const torneoGuardadoId = storage.getItem('torneo_seleccionado')
   
   const [torneos, setTorneos] = useState([])
   const [torneoSeleccionado, setTorneoSeleccionado] = useState(null)
+  const [torneosInscritos, setTorneosInscritos] = useState([]) // Solo torneos donde está inscrito
   const [eventoActual, setEventoActual] = useState(null)
   const [rondas, setRondas] = useState([])
   const [rondaSeleccionada, setRondaSeleccionada] = useState(null)
@@ -26,25 +29,83 @@ export default function RondaPage() {
   const [mensaje, setMensaje] = useState(null)
 
   useEffect(() => {
-    cargarTorneos()
+    cargarTorneosEInscripciones()
   }, [])
 
-  async function cargarTorneos() {
-    const { data } = await supabase
+  async function cargarTorneosEInscripciones() {
+    // 1. Obtener torneos activos
+    const { data: torneosData } = await supabase
       .from('torneos')
       .select('*')
       .eq('activo', true)
 
-    setTorneos(data || [])
+    setTorneos(torneosData || [])
     
-    // Priorizar torneo guardado, si no, el primero
-    if (data?.length > 0) {
-      if (torneoGuardadoId && data.find(t => String(t.id) === String(torneoGuardadoId))) {
-        setTorneoSeleccionado(torneoGuardadoId)
-      } else {
-        setTorneoSeleccionado(data[0].id)
+    if (!torneosData?.length) {
+      setCargando(false)
+      return
+    }
+    
+    // 2. Obtener ID del jugador
+    const { data: jugador } = await supabase
+      .from('jugadores')
+      .select('id')
+      .eq('player_id', playerId)
+      .single()
+    
+    if (!jugador) {
+      setCargando(false)
+      return
+    }
+    
+    // 3. Verificar en qué torneos está inscrito (evento actual)
+    const torneosConInscripcion = []
+    
+    for (const torneo of torneosData) {
+      const { data: evento } = await supabase
+        .from('eventos')
+        .select('id')
+        .eq('torneo_id', torneo.id)
+        .eq('archivado', false)
+        .order('fecha', { ascending: false })
+        .limit(1)
+      
+      if (evento?.length > 0) {
+        const { data: inscripcion } = await supabase
+          .from('inscripciones')
+          .select('id')
+          .eq('jugador_id', jugador.id)
+          .eq('torneo_id', torneo.id)
+          .eq('evento_id', evento[0].id)
+          .maybeSingle()
+        
+        if (inscripcion) {
+          torneosConInscripcion.push(torneo)
+        }
       }
     }
+    
+    setTorneosInscritos(torneosConInscripcion)
+    
+    // 4. Seleccionar torneo (priorizar el guardado o el primero donde está inscrito)
+    if (torneosConInscripcion.length > 0) {
+      let torneoId = torneoGuardadoId
+      
+      // Verificar si el torneo guardado es válido y está inscrito
+      const torneoGuardadoValido = torneosConInscripcion.find(t => String(t.id) === String(torneoGuardadoId))
+      
+      if (torneoGuardadoValido) {
+        torneoId = torneoGuardadoId
+      } else if (torneosConInscripcion[0]) {
+        torneoId = torneosConInscripcion[0].id
+      }
+      
+      setTorneoSeleccionado(torneoId)
+      await cargarEventoActual(torneoId)
+    } else {
+      setMensaje('No estás inscrito en ningún torneo')
+    }
+    
     setCargando(false)
   }
 
@@ -59,6 +120,7 @@ export default function RondaPage() {
 
     if (data?.length > 0) {
       setEventoActual(data[0])
+      await cargarRondas(data[0].id)
       return data[0]
     }
     setEventoActual(null)
@@ -79,11 +141,14 @@ export default function RondaPage() {
       const activa = lista.find(r => r.status === 'activa')
       if (activa) {
         setRondaSeleccionada(activa.id)
+        await cargarMatches(activa.id, eventoId)
       } else {
         setRondaSeleccionada(lista[0].id)
+        await cargarMatches(lista[0].id, eventoId)
       }
     } else {
       setRondaSeleccionada(null)
+      setMatches([])
     }
     return lista
   }, [])
@@ -141,27 +206,22 @@ export default function RondaPage() {
     setMatches(formateados)
   }, [])
 
-  useEffect(() => {
-    if (torneoSeleccionado) {
-      cargarEventoActual(torneoSeleccionado)
+  const cambiarTorneo = async (torneoId) => {
+    // Solo permitir cambiar a torneos donde está inscrito
+    const estaInscrito = torneosInscritos.some(t => String(t.id) === String(torneoId))
+    if (!estaInscrito) {
+      setMensaje('No estás inscrito en este torneo')
+      setTimeout(() => setMensaje(null), 3000)
+      return
     }
-  }, [torneoSeleccionado, cargarEventoActual])
-
-  useEffect(() => {
-    if (eventoActual) {
-      cargarRondas(eventoActual.id)
-    } else {
-      setRondas([])
-      setRondaSeleccionada(null)
-      setMatches([])
-    }
-  }, [eventoActual, cargarRondas])
-
-  useEffect(() => {
-    if (rondaSeleccionada && eventoActual) {
-      cargarMatches(rondaSeleccionada, eventoActual.id)
-    }
-  }, [rondaSeleccionada, eventoActual, cargarMatches])
+    
+    setTorneoSeleccionado(torneoId)
+    storage.setItem('torneo_seleccionado', torneoId)
+    setRondas([])
+    setRondaSeleccionada(null)
+    setMatches([])
+    await cargarEventoActual(torneoId)
+  }
 
   const reportar = async (match, ganador) => {
     setReportandoId(match.id)
@@ -234,17 +294,37 @@ export default function RondaPage() {
     )
   }
 
+  // Si no está inscrito en ningún torneo
+  if (torneosInscritos.length === 0) {
+    return (
+      <div className="p-4 pb-24">
+        <h1 className="text-2xl font-bold text-gray-800 mb-4">Mi Ronda</h1>
+        <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-6 text-center">
+          <p className="text-yellow-700 font-medium mb-2">No estás inscrito en ningún torneo</p>
+          <p className="text-yellow-600 text-sm">Ve a la pantalla principal para inscribirte</p>
+          <button
+            onClick={() => router.push('/dashboard')}
+            className="mt-4 bg-primary text-white px-6 py-2 rounded-lg text-sm"
+          >
+            Ver torneos
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="p-4 pb-24">
       <h1 className="text-2xl font-bold text-gray-800 mb-4">Mi Ronda</h1>
 
-      {torneos.length > 1 && (
+      {/* Selector SOLO de torneos donde está inscrito */}
+      {torneosInscritos.length > 1 && (
         <div className="mb-4 overflow-x-auto">
           <div className="flex gap-2">
-            {torneos.map(t => (
+            {torneosInscritos.map(t => (
               <button
                 key={t.id}
-                onClick={() => setTorneoSeleccionado(t.id)}
+                onClick={() => cambiarTorneo(t.id)}
                 className={`px-4 py-2 rounded-full text-sm whitespace-nowrap ${
                   String(torneoSeleccionado) === String(t.id)
                     ? 'bg-primary text-white'
@@ -255,6 +335,12 @@ export default function RondaPage() {
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {mensaje && (
+        <div className="bg-red-100 text-red-700 p-3 rounded-xl mb-4 text-center">
+          {mensaje}
         </div>
       )}
 
@@ -280,12 +366,6 @@ export default function RondaPage() {
             rondaSeleccionada={rondaSeleccionada}
             setRonda={setRondaSeleccionada}
           />
-
-          {mensaje && (
-            <div className="bg-red-100 text-red-700 p-3 rounded-xl mb-4 text-center">
-              {mensaje}
-            </div>
-          )}
 
           {matches.length === 0 ? (
             <div className="bg-white rounded-xl p-8 text-center">
