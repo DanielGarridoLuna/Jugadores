@@ -5,19 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { storage } from '@/utils/storage'
 import { getMexicoDateInputValue } from '@/utils/date'
-
-// Función para obtener evento actual (igual que en app original)
-async function obtenerEventoActual(torneo_id) {
-  const { data } = await supabase
-    .from('eventos')
-    .select('*')
-    .eq('torneo_id', torneo_id)
-    .eq('archivado', false)
-    .order('fecha', { ascending: false })
-    .limit(1)
-  
-  return data?.[0] || null
-}
+import { obtenerEventoActual, crearEventoSiNoExiste } from '@/utils/evento'
 
 export default function DashboardPage() {
   const [torneos, setTorneos] = useState([])
@@ -39,7 +27,6 @@ export default function DashboardPage() {
   async function cargarTorneos() {
     setCargando(true)
     
-    // 1. Obtener torneos activos
     const { data: torneosData } = await supabase
       .from('torneos')
       .select('*')
@@ -52,7 +39,6 @@ export default function DashboardPage() {
       return
     }
     
-    // 2. Obtener el ID interno del jugador usando player_id
     const { data: jugador } = await supabase
       .from('jugadores')
       .select('id')
@@ -60,34 +46,24 @@ export default function DashboardPage() {
       .single()
     
     if (!jugador) {
-      console.log('Jugador no encontrado con player_id:', playerId)
       setCargando(false)
       return
     }
     
-    console.log('Jugador ID encontrado:', jugador.id)
-    
-    // 3. Para cada torneo, verificar inscripción en evento actual
     const mapaInscripciones = {}
+    const fechaHoy = getMexicoDateInputValue()
     
     for (const torneo of torneosData) {
-      const eventoActual = await obtenerEventoActual(torneo.id)
+      // Verificar si existe inscripción para hoy en este torneo
+      const { data: inscripcionHoy } = await supabase
+        .from('inscripciones')
+        .select('id')
+        .eq('jugador_id', jugador.id)
+        .eq('torneo_id', torneo.id)
+        .eq('fecha', fechaHoy)
+        .maybeSingle()
       
-      if (eventoActual?.id) {
-        const { data: inscripcion } = await supabase
-          .from('inscripciones')
-          .select('id')
-          .eq('jugador_id', jugador.id)
-          .eq('torneo_id', torneo.id)
-          .eq('evento_id', eventoActual.id)
-          .maybeSingle()
-        
-        mapaInscripciones[torneo.id] = !!inscripcion
-        console.log(`Torneo ${torneo.nombre}: inscrito = ${!!inscripcion}`)
-      } else {
-        mapaInscripciones[torneo.id] = false
-        console.log(`Torneo ${torneo.nombre}: sin evento actual`)
-      }
+      mapaInscripciones[torneo.id] = !!inscripcionHoy
     }
     
     setInscripciones(mapaInscripciones)
@@ -111,27 +87,34 @@ export default function DashboardPage() {
         return
       }
       
-      // 2. Obtener evento actual del torneo
-      const eventoActual = await obtenerEventoActual(torneoId)
+      const fechaHoy = getMexicoDateInputValue()
       
-      if (!eventoActual?.id) {
-        setMensaje('No hay evento activo para este torneo')
-        return
-      }
-      
-      // 3. Verificar si ya está inscrito
-      const { data: yaInscrito } = await supabase
+      // 2. Verificar si ya existe inscripción para hoy en este torneo
+      const { data: yaInscritoHoy } = await supabase
         .from('inscripciones')
         .select('id')
         .eq('jugador_id', jugador.id)
         .eq('torneo_id', torneoId)
-        .eq('evento_id', eventoActual.id)
+        .eq('fecha', fechaHoy)
+        .maybeSingle()
       
-      if (yaInscrito && yaInscrito.length > 0) {
-        setMensaje('Ya estás inscrito en este torneo')
+      if (yaInscritoHoy) {
+        setMensaje('Ya estás inscrito en este torneo para hoy')
         setInscripciones(prev => ({ ...prev, [torneoId]: true }))
         setTimeout(() => setMensaje(null), 2000)
         return
+      }
+      
+      // 3. Obtener evento actual o crearlo silenciosamente
+      let eventoActual = await obtenerEventoActual(torneoId)
+      
+      if (!eventoActual) {
+        eventoActual = await crearEventoSiNoExiste(torneoId)
+        
+        if (!eventoActual) {
+          setMensaje('Error al inscribir')
+          return
+        }
       }
       
       // 4. Obtener estado del registro
@@ -141,7 +124,6 @@ export default function DashboardPage() {
         .single()
       
       const late = !estado?.registro_abierto
-      const fechaHoy = getMexicoDateInputValue()
       
       // 5. Insertar inscripción
       const { error } = await supabase
@@ -157,14 +139,23 @@ export default function DashboardPage() {
         })
       
       if (error) {
-        console.error('Error al inscribir:', error)
-        setMensaje('Error al inscribir')
+        if (error.code === '23505') {
+          setMensaje('Ya estás inscrito en este torneo')
+          setInscripciones(prev => ({ ...prev, [torneoId]: true }))
+        } else {
+          console.error('Error al inscribir:', error)
+          setMensaje('Error al inscribir')
+        }
+        setTimeout(() => setMensaje(null), 3000)
         return
       }
       
       setInscripciones(prev => ({ ...prev, [torneoId]: true }))
       setMensaje(`¡Inscripción exitosa a ${torneoNombre}!`)
       setTimeout(() => setMensaje(null), 3000)
+      
+      // Recargar torneos para actualizar estado
+      setTimeout(() => cargarTorneos(), 1000)
       
     } catch (error) {
       console.error(error)
