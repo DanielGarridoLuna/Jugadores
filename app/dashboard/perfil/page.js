@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { storage } from '@/utils/storage'
-import { User, Edit2, Save, Phone, Calendar, Hash, LogOut } from 'lucide-react'
+import { User, Edit2, Save, Phone, Calendar, Hash, LogOut, Trophy } from 'lucide-react'
 
 export default function PerfilPage() {
   const router = useRouter()
@@ -18,10 +18,14 @@ export default function PerfilPage() {
   const [cargando, setCargando] = useState(true)
   const [guardando, setGuardando] = useState(false)
   const [mensaje, setMensaje] = useState(null)
+  
+  const [torneosPagadosMes, setTorneosPagadosMes] = useState(0)
+  const [cargandoTorneos, setCargandoTorneos] = useState(true)
 
   useEffect(() => {
     if (playerId) {
       cargarPerfil()
+      obtenerTorneosPagadosMes()
     } else {
       router.push('/')
     }
@@ -41,6 +45,39 @@ export default function PerfilPage() {
       setAnio(data.anio_nacimiento || '')
     }
     setCargando(false)
+  }
+
+  async function obtenerTorneosPagadosMes() {
+    setCargandoTorneos(true)
+    
+    const ahora = new Date()
+    const año = ahora.getFullYear()
+    const mes = ahora.getMonth() + 1
+    
+    const primerDia = `${año}-${String(mes).padStart(2, '0')}-01`
+    const ultimoDia = new Date(año, mes, 0).toISOString().split('T')[0]
+    
+    const { data: jugadorData } = await supabase
+      .from('jugadores')
+      .select('id')
+      .eq('player_id', playerId)
+      .single()
+    
+    if (jugadorData) {
+      const { count, error } = await supabase
+        .from('inscripciones')
+        .select('id', { count: 'exact', head: true })
+        .eq('jugador_id', jugadorData.id)
+        .eq('pagado', true)
+        .gte('fecha', primerDia)
+        .lte('fecha', ultimoDia)
+      
+      if (!error) {
+        setTorneosPagadosMes(count || 0)
+      }
+    }
+    
+    setCargandoTorneos(false)
   }
 
   async function guardarCambios() {
@@ -75,8 +112,12 @@ export default function PerfilPage() {
   const handleCerrarSesion = () => {
     storage.removeItem('player_id')
     storage.removeItem('jugador_nombre')
+    storage.removeItem('torneo_seleccionado')
     router.push('/')
   }
+
+  const torneosRestantes = 12 - torneosPagadosMes
+  const esVip = torneosPagadosMes >= 12
 
   if (cargando) {
     return (
@@ -105,6 +146,45 @@ export default function PerfilPage() {
           mensaje.includes('correctamente') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
         }`}>
           {mensaje}
+        </div>
+      )}
+
+      {!cargandoTorneos && (
+        <div className={`mb-4 rounded-xl p-4 shadow-md ${esVip ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-primary/20 to-secondary/20'}`}>
+          <div className="flex items-center gap-3">
+            <Trophy size={32} className={esVip ? 'text-white' : 'text-primary'} />
+            <div className="flex-1">
+              <p className={`text-sm font-semibold ${esVip ? 'text-white' : 'text-gray-600'}`}>
+                Torneos de este mes
+              </p>
+              <p className={`text-3xl font-bold ${esVip ? 'text-white' : 'text-primary'}`}>
+                {torneosPagadosMes} / 12
+              </p>
+            </div>
+          </div>
+          
+          {esVip ? (
+            <div className="mt-3 p-2 bg-white/20 rounded-lg">
+              <p className="text-white font-semibold text-sm text-center">
+                🎉 ¡Felicidades! Has alcanzado la meta mensual.
+              </p>
+              <p className="text-white/90 text-xs text-center mt-1">
+                Puedes solicitar acceso al grupo VIP contactando al administrador.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-3">
+              <p className="text-sm text-gray-600">
+                Te faltan <span className="font-bold text-primary">{torneosRestantes}</span> torneos para llegar al grupo VIP.
+              </p>
+              <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-primary h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${(torneosPagadosMes / 12) * 100}%` }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       )}
 
