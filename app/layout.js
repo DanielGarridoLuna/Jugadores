@@ -18,7 +18,7 @@ export const viewport = {
 export default function RootLayout({ children }) {
   return (
     <html lang="es">
-      <body className="bg-primary">
+      <body>
         <div className="min-h-screen">
           {children}
         </div>

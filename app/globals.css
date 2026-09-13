@@ -1,6 +1,7 @@
 @import "tailwindcss";
 
 :root {
+  /* Colores base del proyecto */
   --primary: #4169E1;
   --primary-dark: #2b4fc9;
   --secondary: #4F15E0;
@@ -13,14 +14,31 @@
   --darkGray: #6c757d;
   --white: #ffffff;
   --black: #212529;
+
+  /* Cyberpunk */
+  --bg-dark: #05010F;
+  --bg-panel: #0A0620;
+  --bg-panel-2: #0E0828;
+  --neon-cyan: #00E5FF;
+  --neon-pink: #FF2BD6;
+  --neon-violet: #7C4DFF;
+  --border-neon: rgba(0, 229, 255, 0.6);
+  --border-neon-soft: rgba(0, 229, 255, 0.25);
+  --text-main: #EAF6FF;
+  --text-muted: #6E7BA6;
 }
 
 body {
-  background-color: var(--primary);
-  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background:
+    linear-gradient(rgba(0,229,255,0.05) 1px, transparent 1px) 0 0 / 100% 40px,
+    linear-gradient(90deg, rgba(255,43,214,0.05) 1px, transparent 1px) 0 0 / 40px 100%,
+    radial-gradient(circle at 50% 0%, #12062A 0%, #05010F 70%) !important;
+  background-color: #05010F !important;
+  color: var(--text-main);
+  font-family: 'Rajdhani', 'Orbitron', system-ui, sans-serif;
+  min-height: 100vh;
 }
 
-/* Scroll suave */
 html {
   scroll-behavior: smooth;
 }
@@ -30,4 +48,257 @@ input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
+}
+
+/* ============================
+   Utilidades de color
+   ============================ */
+.text-primary { color: var(--primary); }
+.bg-primary { background-color: var(--primary); }
+.text-secondary { color: var(--secondary); }
+.bg-secondary { background-color: var(--secondary); }
+.text-success { color: var(--success); }
+.bg-success { background-color: var(--success); }
+.text-error { color: var(--error); }
+.bg-error { background-color: var(--error); }
+.text-warning { color: var(--warning); }
+.bg-warning { background-color: var(--warning); }
+
+/* ============================
+   Helpers Cyberpunk
+   ============================ */
+.surface {
+  background: var(--bg-panel);
+  border: 1px solid var(--border-neon-soft);
+  box-shadow:
+    0 0 14px rgba(0,229,255,0.15),
+    inset 0 0 18px rgba(124,77,255,0.06);
+  border-radius: 8px;
+}
+
+.surface-strong {
+  background: var(--bg-panel-2);
+  border: 1px solid var(--border-neon);
+  box-shadow:
+    0 0 18px rgba(0,229,255,0.35),
+    inset 0 0 24px rgba(124,77,255,0.12);
+  border-radius: 8px;
+}
+
+.text-neon {
+  color: var(--neon-cyan);
+  text-shadow: 0 0 8px rgba(0,229,255,0.7);
+}
+
+.text-neon-pink {
+  color: var(--neon-pink);
+  text-shadow: 0 0 8px rgba(255,43,214,0.7);
+}
+
+.text-neon-violet {
+  color: var(--neon-violet);
+  text-shadow: 0 0 8px rgba(124,77,255,0.7);
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+/* ============================
+   Botones
+   ============================ */
+.btn-neon {
+  border: 1px solid var(--border-neon);
+  background: rgba(0,229,255,0.05);
+  color: var(--neon-cyan);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  transition: all 0.15s ease;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.btn-neon:hover {
+  background: rgba(0,229,255,0.2);
+  box-shadow: 0 0 14px rgba(0,229,255,0.8);
+}
+
+.btn-neon-active {
+  background: var(--neon-pink);
+  color: #05010F;
+  box-shadow: 0 0 18px var(--neon-pink);
+  border: 1px solid var(--neon-pink);
+}
+
+.btn-neon-pink {
+  border: 1px solid var(--neon-pink);
+  background: rgba(255,43,214,0.05);
+  color: var(--neon-pink);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-weight: 700;
+  transition: all 0.15s ease;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.btn-neon-pink:hover {
+  background: rgba(255,43,214,0.2);
+  box-shadow: 0 0 14px rgba(255,43,214,0.8);
+}
+
+/* ============================
+   Calendario Cyberpunk
+   ============================ */
+.custom-calendar .rbc-month-view,
+.custom-calendar .rbc-time-view {
+  background: var(--bg-panel) !important;
+  border: 1px solid var(--border-neon) !important;
+  border-radius: 6px !important;
+  overflow: hidden !important;
+  box-shadow:
+    0 0 18px rgba(0,229,255,0.35),
+    inset 0 0 24px rgba(124,77,255,0.12);
+}
+
+.custom-calendar .rbc-header {
+  padding: 10px !important;
+  font-weight: 700 !important;
+  font-size: 12px !important;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--neon-cyan) !important;
+  background: rgba(0,229,255,0.05) !important;
+  border-bottom: 1px solid var(--border-neon) !important;
+  text-shadow: 0 0 6px rgba(0,229,255,0.7);
+}
+
+.custom-calendar .rbc-day-bg {
+  background: transparent !important;
+  border-color: rgba(0,229,255,0.15) !important;
+  transition: background 0.15s ease;
+}
+
+.custom-calendar .rbc-day-bg:hover {
+  background: rgba(255,43,214,0.10) !important;
+}
+
+.custom-calendar .rbc-off-range-bg {
+  background: rgba(255,255,255,0.02) !important;
+}
+
+.custom-calendar .rbc-today {
+  background: rgba(0,229,255,0.12) !important;
+  box-shadow: inset 0 0 0 1px var(--neon-cyan), inset 0 0 12px rgba(0,229,255,0.4);
+}
+
+.custom-calendar .rbc-date-cell {
+  padding: 6px 10px !important;
+  font-size: 13px !important;
+  color: var(--text-muted) !important;
+  font-family: 'Orbitron', monospace;
+}
+
+.custom-calendar .rbc-date-cell.rbc-now {
+  color: #fff !important;
+  font-weight: 800 !important;
+  text-shadow: 0 0 8px var(--neon-cyan);
+}
+
+.custom-calendar .rbc-event {
+  border: 1px solid rgba(255,255,255,0.25) !important;
+  border-radius: 3px !important;
+  padding: 2px 4px !important;
+  font-size: 12px !important;
+  cursor: pointer !important;
+  box-shadow: 0 0 10px currentColor;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.custom-calendar .rbc-event:hover {
+  transform: translateY(-1px) scale(1.04);
+  box-shadow: 0 0 18px currentColor;
+}
+
+.custom-calendar .rbc-month-row {
+  min-height: 84px !important;
+}
+
+/* Toolbar Cyberpunk */
+.custom-calendar .rbc-toolbar {
+  margin-bottom: 14px !important;
+  gap: 8px;
+}
+
+.custom-calendar .rbc-toolbar-label {
+  font-weight: 800 !important;
+  font-size: 16px !important;
+  color: var(--neon-cyan) !important;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(0,229,255,0.8);
+}
+
+.custom-calendar .rbc-toolbar button {
+  color: var(--neon-cyan) !important;
+  border-radius: 4px !important;
+  padding: 6px 14px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border: 1px solid var(--border-neon) !important;
+  background: rgba(0,229,255,0.05) !important;
+  transition: all 0.15s ease;
+}
+
+.custom-calendar .rbc-toolbar button:hover {
+  background: rgba(0,229,255,0.2) !important;
+  box-shadow: 0 0 14px rgba(0,229,255,0.8);
+}
+
+.custom-calendar .rbc-toolbar .rbc-active {
+  background: var(--neon-pink) !important;
+  color: #05010F !important;
+  box-shadow: 0 0 18px var(--neon-pink);
+}
+
+/* ============================
+   Scrollbar Cyberpunk
+   ============================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0,229,255,0.35);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0,229,255,0.65);
+}
+
+/* ============================
+   Ajustes de texto para fondo oscuro
+   ============================ */
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-main) !important;
+}
+
+.text-gray-800,
+.text-gray-700,
+.text-gray-900 {
+  color: var(--text-main) !important;
+}
+
+.text-gray-500,
+.text-gray-600,
+.text-gray-400 {
+  color: var(--text-muted) !important;
 }

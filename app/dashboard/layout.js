@@ -28,7 +28,7 @@ export default function DashboardLayout({ children }) {
 
   return (
     <>
-      <div className="pb-20 min-h-screen bg-gray-100">
+      <div className="pb-20 min-h-screen">
         {children}
       </div>
       <Navbar />

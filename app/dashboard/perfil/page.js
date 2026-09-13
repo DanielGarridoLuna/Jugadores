@@ -122,7 +122,7 @@ export default function PerfilPage() {
   if (cargando) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        <div className="w-8 h-8 border-4 border-[color:var(--neon-cyan)] border-t-transparent rounded-full animate-spin"></div>
       </div>
     )
   }
@@ -130,11 +130,11 @@ export default function PerfilPage() {
   return (
     <div className="p-4 pb-24">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Mi Perfil</h1>
+        <h1 className="text-2xl font-bold text-neon">Mi Perfil</h1>
         {!editando && (
           <button
             onClick={() => setEditando(true)}
-            className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg text-sm"
+            className="btn-neon flex items-center gap-2"
           >
             <Edit2 size={16} /> Editar
           </button>
@@ -142,44 +142,50 @@ export default function PerfilPage() {
       </div>
 
       {mensaje && (
-        <div className={`mb-4 p-3 rounded-xl text-center ${
-          mensaje.includes('correctamente') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+        <div className={`mb-4 p-3 rounded-lg text-center text-sm border ${
+          mensaje.includes('correctamente')
+            ? 'bg-green-500/10 text-green-400 border-green-500/40'
+            : 'bg-red-500/10 text-red-400 border-red-500/40'
         }`}>
           {mensaje}
         </div>
       )}
 
       {!cargandoTorneos && (
-        <div className={`mb-4 rounded-xl p-4 shadow-md ${esVip ? 'bg-gradient-to-r from-yellow-400 to-yellow-600' : 'bg-gradient-to-r from-primary/20 to-secondary/20'}`}>
+        <div className={`mb-4 rounded-lg p-4 ${
+          esVip
+            ? 'bg-gradient-to-r from-yellow-500/20 to-yellow-700/20 border border-yellow-500/60 shadow-[0_0_18px_rgba(234,179,8,0.4)]'
+            : 'surface'
+        }`}>
           <div className="flex items-center gap-3">
-            <Trophy size={32} className={esVip ? 'text-white' : 'text-primary'} />
+            <Trophy size={32} className={esVip ? 'text-yellow-400' : 'text-neon'} />
             <div className="flex-1">
-              <p className={`text-sm font-semibold ${esVip ? 'text-white' : 'text-gray-600'}`}>
+              <p className="text-sm font-semibold text-muted">
                 Torneos de este mes
               </p>
-              <p className={`text-3xl font-bold ${esVip ? 'text-white' : 'text-primary'}`}>
+              <p className={`text-3xl font-bold ${esVip ? 'text-yellow-400' : 'text-neon'}`}>
                 {torneosPagadosMes} / 12
               </p>
             </div>
           </div>
           
           {esVip ? (
-            <div className="mt-3 p-2 bg-white/20 rounded-lg">
-              <p className="text-white font-semibold text-sm text-center">
-                🎉 ¡Felicidades! Has alcanzado la meta mensual.
+            <div className="mt-3 p-2 bg-white/5 rounded-lg border border-yellow-500/40">
+              <p className="text-yellow-400 font-semibold text-sm text-center">
+                ¡Felicidades! Has alcanzado la meta mensual.
               </p>
-              <p className="text-white/90 text-xs text-center mt-1">
+              <p className="text-yellow-400/80 text-xs text-center mt-1">
                 Puedes solicitar acceso al grupo VIP contactando al administrador.
               </p>
             </div>
           ) : (
             <div className="mt-3">
-              <p className="text-sm text-gray-600">
-                Te faltan <span className="font-bold text-primary">{torneosRestantes}</span> torneos para llegar al grupo VIP.
+              <p className="text-sm text-muted">
+                Te faltan <span className="font-bold text-neon">{torneosRestantes}</span> torneos para llegar al grupo VIP.
               </p>
-              <div className="mt-2 w-full bg-gray-200 rounded-full h-2">
+              <div className="mt-2 w-full bg-white/5 rounded-full h-2 border border-[color:var(--border-neon-soft)]">
                 <div 
-                  className="bg-primary h-2 rounded-full transition-all duration-300"
+                  className="bg-[color:var(--neon-cyan)] h-full rounded-full transition-all duration-300 shadow-[0_0_10px_var(--neon-cyan)]"
                   style={{ width: `${(torneosPagadosMes / 12) * 100}%` }}
                 />
               </div>
@@ -188,23 +194,23 @@ export default function PerfilPage() {
         </div>
       )}
 
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
+      <div className="surface overflow-hidden">
         <div className="bg-gradient-to-r from-primary to-secondary p-6 flex justify-center">
-          <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg">
-            <User size={48} className="text-primary" />
+          <div className="w-24 h-24 bg-[color:var(--bg-panel)] rounded-full flex items-center justify-center border border-[color:var(--border-neon)] shadow-[0_0_18px_rgba(0,229,255,0.4)]">
+            <User size={48} className="text-neon" />
           </div>
         </div>
 
         <div className="p-5 space-y-4">
-          <div className="border-b border-gray-100 pb-3">
-            <label className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+          <div className="border-b border-[color:var(--border-neon-soft)] pb-3">
+            <label className="flex items-center gap-2 text-xs text-muted mb-1 uppercase tracking-widest">
               <Hash size={14} /> Player ID
             </label>
-            <p className="font-mono text-lg font-semibold text-gray-800">{playerId}</p>
+            <p className="font-mono text-lg font-semibold text-[color:var(--text-main)]">{playerId}</p>
           </div>
 
-          <div className="border-b border-gray-100 pb-3">
-            <label className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+          <div className="border-b border-[color:var(--border-neon-soft)] pb-3">
+            <label className="flex items-center gap-2 text-xs text-muted mb-1 uppercase tracking-widest">
               <User size={14} /> Nombre completo
             </label>
             {editando ? (
@@ -212,15 +218,15 @@ export default function PerfilPage() {
                 type="text"
                 value={nombre}
                 onChange={(e) => setNombre(e.target.value)}
-                className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:border-primary"
+                className="w-full bg-white/5 border border-[color:var(--border-neon-soft)] rounded-lg p-2 text-[color:var(--text-main)] focus:outline-none focus:border-[color:var(--neon-cyan)] focus:shadow-[0_0_10px_rgba(0,229,255,0.4)]"
               />
             ) : (
-              <p className="text-gray-800">{jugador?.nombre}</p>
+              <p className="text-[color:var(--text-main)]">{jugador?.nombre}</p>
             )}
           </div>
 
-          <div className="border-b border-gray-100 pb-3">
-            <label className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+          <div className="border-b border-[color:var(--border-neon-soft)] pb-3">
+            <label className="flex items-center gap-2 text-xs text-muted mb-1 uppercase tracking-widest">
               <Phone size={14} /> Teléfono
             </label>
             {editando ? (
@@ -229,15 +235,15 @@ export default function PerfilPage() {
                 inputMode="numeric"
                 value={telefono}
                 onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))}
-                className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:border-primary"
+                className="w-full bg-white/5 border border-[color:var(--border-neon-soft)] rounded-lg p-2 text-[color:var(--text-main)] focus:outline-none focus:border-[color:var(--neon-cyan)] focus:shadow-[0_0_10px_rgba(0,229,255,0.4)]"
               />
             ) : (
-              <p className="text-gray-800">{jugador?.telefono || 'No registrado'}</p>
+              <p className="text-[color:var(--text-main)]">{jugador?.telefono || 'No registrado'}</p>
             )}
           </div>
 
           <div className="pb-3">
-            <label className="flex items-center gap-2 text-xs text-gray-500 mb-1">
+            <label className="flex items-center gap-2 text-xs text-muted mb-1 uppercase tracking-widest">
               <Calendar size={14} /> Año de nacimiento
             </label>
             {editando ? (
@@ -247,10 +253,10 @@ export default function PerfilPage() {
                 maxLength={4}
                 value={anio}
                 onChange={(e) => setAnio(e.target.value.replace(/\D/g, ''))}
-                className="w-full border border-gray-300 rounded-lg p-2 focus:outline-none focus:border-primary"
+                className="w-full bg-white/5 border border-[color:var(--border-neon-soft)] rounded-lg p-2 text-[color:var(--text-main)] focus:outline-none focus:border-[color:var(--neon-cyan)] focus:shadow-[0_0_10px_rgba(0,229,255,0.4)]"
               />
             ) : (
-              <p className="text-gray-800">{jugador?.anio_nacimiento || 'No registrado'}</p>
+              <p className="text-[color:var(--text-main)]">{jugador?.anio_nacimiento || 'No registrado'}</p>
             )}
           </div>
         </div>
@@ -265,14 +271,14 @@ export default function PerfilPage() {
               setTelefono(jugador?.telefono || '')
               setAnio(jugador?.anio_nacimiento || '')
             }}
-            className="flex-1 bg-gray-300 text-gray-700 py-3 rounded-xl font-semibold"
+            className="flex-1 py-3 rounded-md font-semibold uppercase tracking-widest text-sm bg-white/5 text-[color:var(--text-main)] border border-[color:var(--border-neon-soft)] hover:bg-white/10 transition-colors"
           >
             Cancelar
           </button>
           <button
             onClick={guardarCambios}
             disabled={guardando}
-            className="flex-1 bg-primary text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2"
+            className="flex-1 py-3 rounded-md font-bold uppercase tracking-widest text-sm bg-[color:var(--neon-cyan)] text-[#05010F] border border-[color:var(--neon-cyan)] shadow-[0_0_18px_rgba(0,229,255,0.8)] hover:bg-[color:var(--neon-cyan)]/80 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
           >
             <Save size={18} /> {guardando ? 'Guardando...' : 'Guardar'}
           </button>
@@ -280,7 +286,7 @@ export default function PerfilPage() {
       ) : (
         <button
           onClick={handleCerrarSesion}
-          className="w-full bg-red-500 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 mt-4"
+          className="w-full py-3 rounded-md font-bold uppercase tracking-widest text-sm bg-red-500/10 text-red-400 border border-red-500/40 hover:bg-red-500/20 hover:shadow-[0_0_14px_rgba(244,67,54,0.6)] transition-all flex items-center justify-center gap-2 mt-4"
         >
           <LogOut size={18} /> Cerrar Sesión
         </button>

@@ -55,51 +55,57 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col justify-center px-5 py-10 bg-primary">
+    <div className="min-h-screen flex flex-col justify-center px-5 py-10">
       <div className="items-center mb-10">
         <div className="flex justify-center">
-          <div className="w-40 h-40   flex items-center justify-center ">
+          <div className="w-40 h-40 flex items-center justify-center">
             <Image
               src="/logo.png"
               alt="Logo Torneos"
               width={160}
               height={160}
-              className="object-cover"
+              className="object-cover drop-shadow-[0_0_18px_rgba(0,229,255,0.6)]"
               priority
             />
           </div>
         </div>
-        <h1 className="text-3xl font-bold text-white text-center">Sistema de torneos</h1>
+        <h1 className="text-3xl font-bold text-neon text-center tracking-widest uppercase">
+          Sistema de torneos
+        </h1>
       </div>
 
       <div className="px-5">
-        <p className="text-white text-center font-medium mb-3">Player ID o Teléfono</p>
+        <p className="text-muted text-center font-medium mb-3 uppercase tracking-widest text-xs">
+          Player ID o Teléfono
+        </p>
 
         <input
           type="tel"
           inputMode="numeric"
           placeholder="Ej: 12345 o 5551234567"
-          className="w-full text-center bg-white rounded-xl px-4 py-3 text-base text-gray-800 placeholder-gray-400 border-0 focus:outline-none focus:ring-2 focus:ring-secondary"
+          className="w-full text-center bg-white/5 border border-[color:var(--border-neon-soft)] rounded-lg px-4 py-3 text-base text-[color:var(--text-main)] placeholder-[color:var(--text-muted)] focus:outline-none focus:border-[color:var(--neon-cyan)] focus:shadow-[0_0_14px_rgba(0,229,255,0.5)] transition-all"
           value={identificador}
           onChange={(e) => setIdentificador(e.target.value.replace(/\D/g, ''))}
           onKeyDown={(e) => e.key === 'Enter' && buscarJugador()}
         />
 
         {error && (
-          <p className="text-yellow-200 text-sm text-center mt-3">{error}</p>
+          <p className="text-neon-pink text-sm text-center mt-3">{error}</p>
         )}
 
         <button
-  onClick={buscarJugador}
-  disabled={isLoading}
-  className="w-full py-3 rounded-xl font-bold text-lg mt-5 disabled:opacity-50 transition active:scale-95"
-  style={{ backgroundColor: '#4F15E0', color: 'white' }}
->
-  {isLoading ? 'Buscando...' : 'Iniciar sesión'}
-</button>
+          onClick={buscarJugador}
+          disabled={isLoading}
+          className="w-full py-3 rounded-lg font-bold text-lg mt-5 uppercase tracking-widest bg-[color:var(--secondary)] text-white border border-[color:var(--neon-violet)] shadow-[0_0_18px_rgba(124,77,255,0.6)] hover:shadow-[0_0_24px_rgba(124,77,255,0.9)] transition-all disabled:opacity-50 active:scale-95"
+        >
+          {isLoading ? 'Buscando...' : 'Iniciar sesión'}
+        </button>
 
         <div className="mt-4 text-center">
-          <Link href="/registro" className="text-white text-sm underline">
+          <Link
+            href="/registro"
+            className="text-neon text-sm underline underline-offset-4 hover:text-neon-pink transition-colors"
+          >
             ¿No tienes cuenta? Regístrate
           </Link>
         </div>

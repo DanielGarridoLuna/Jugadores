@@ -20,10 +20,10 @@ export default function MatchCard({ match, onReport, userId, reportando = false,
   const bloqueado = rondaFinalizada || yaReporto || match.confirmado
 
   const getEstadoColor = () => {
-    if (match.confirmado) return 'bg-green-100 text-green-700 border-green-200'
-    if (match.estado === 'conflicto') return 'bg-red-100 text-red-700 border-red-200'
-    if (match.estado === 'esperando') return 'bg-yellow-100 text-yellow-700 border-yellow-200'
-    return 'bg-gray-100 text-gray-600 border-gray-200'
+    if (match.confirmado) return 'bg-green-500/10 text-green-400 border-green-500/40'
+    if (match.estado === 'conflicto') return 'bg-red-500/10 text-red-400 border-red-500/40'
+    if (match.estado === 'esperando') return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/40'
+    return 'bg-white/5 text-muted border-[color:var(--border-neon-soft)]'
   }
 
   const getEstadoIcon = () => {
@@ -33,26 +33,40 @@ export default function MatchCard({ match, onReport, userId, reportando = false,
     return <Swords size={14} />
   }
 
-  // Determinar colores de botones según estado
   const getBotonColor = (esGanador) => {
-    if (match.confirmado && esGanador) return 'bg-green-600 text-white'
-    if (match.estado === 'conflicto' && esGanador) return 'border-2 border-red-500 text-red-500 bg-white'
-    if (esGanador) return 'border-2 border-green-600 text-green-600 bg-white'
-    return 'bg-gray-100 text-gray-700 border border-gray-300'
+    if (match.confirmado && esGanador) {
+      return 'bg-green-500 text-white border border-green-400 shadow-[0_0_14px_rgba(34,197,94,0.6)]'
+    }
+    if (match.estado === 'conflicto' && esGanador) {
+      return 'border-2 border-red-500 text-red-400 bg-red-500/10'
+    }
+    if (esGanador) {
+      return 'border-2 border-green-500 text-green-400 bg-green-500/10'
+    }
+    return 'bg-white/5 text-[color:var(--text-main)] border border-[color:var(--border-neon-soft)] hover:bg-white/10'
   }
 
   const getBotonEmpateColor = () => {
-    if (match.empate && match.confirmado) return 'bg-yellow-500 text-white'
-    if (match.estado === 'conflicto' && match.empate) return 'border-2 border-red-500 text-red-500 bg-white'
-    if (match.empate) return 'border-2 border-yellow-500 text-yellow-600 bg-white'
-    return 'bg-gray-100 text-gray-700 border border-gray-300'
+    if (match.empate && match.confirmado) {
+      return 'bg-yellow-500 text-black border border-yellow-400 shadow-[0_0_14px_rgba(234,179,8,0.6)]'
+    }
+    if (match.estado === 'conflicto' && match.empate) {
+      return 'border-2 border-red-500 text-red-400 bg-red-500/10'
+    }
+    if (match.empate) {
+      return 'border-2 border-yellow-500 text-yellow-400 bg-yellow-500/10'
+    }
+    return 'bg-white/5 text-[color:var(--text-main)] border border-[color:var(--border-neon-soft)] hover:bg-white/10'
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-md overflow-hidden">
-      <div className="bg-gray-50 px-4 py-2 flex justify-between items-center border-b">
-        <span className="font-bold text-gray-700">Mesa {match.mesa || '?'}</span>
-        <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${getEstadoColor()}`}>
+    <div className="surface overflow-hidden">
+      {/* Header */}
+      <div className="bg-white/5 px-4 py-2 flex justify-between items-center border-b border-[color:var(--border-neon-soft)]">
+        <span className="font-bold text-neon text-xs uppercase tracking-widest">
+          Mesa {match.mesa || '?'}
+        </span>
+        <span className={`text-[10px] px-2 py-1 rounded-full flex items-center gap-1 border uppercase tracking-widest font-bold ${getEstadoColor()}`}>
           {getEstadoIcon()}
           {match.confirmado ? 'Confirmado' : match.estado === 'conflicto' ? 'Conflicto' : match.estado === 'esperando' ? 'Esperando' : 'Pendiente'}
         </span>
@@ -60,35 +74,51 @@ export default function MatchCard({ match, onReport, userId, reportando = false,
 
       <div className="p-4">
         {/* Jugador 1 */}
-        <div className={`text-center mb-2 ${match.ganador_final === j1 && !match.empate ? 'bg-green-50 rounded-lg py-2' : ''}`}>
-          <p className="font-bold text-lg">{match.jugador1_nombre || 'Desconocido'}</p>
-          <p className="text-xs text-gray-500">#{j1 || '-'}</p>
+        <div className={`text-center mb-2 rounded-lg py-2 ${
+          match.ganador_final === j1 && !match.empate
+            ? 'bg-green-500/10 border border-green-500/40 shadow-[0_0_10px_rgba(34,197,94,0.4)]'
+            : ''
+        }`}>
+          <p className="font-bold text-lg text-[color:var(--text-main)]">
+            {match.jugador1_nombre || 'Desconocido'}
+          </p>
+          <p className="text-xs text-muted font-mono">#{j1 || '-'}</p>
         </div>
 
         {/* VS */}
         {!esBye ? (
           <div className="flex justify-center items-center gap-2 my-2">
-            <div className="h-px flex-1 bg-gray-200"></div>
-            <Swords size={20} className="text-[#4169E1]" />
-            <div className="h-px flex-1 bg-gray-200"></div>
+            <div className="h-px flex-1 bg-[color:var(--border-neon-soft)]"></div>
+            <Swords size={20} className="text-neon" />
+            <div className="h-px flex-1 bg-[color:var(--border-neon-soft)]"></div>
           </div>
         ) : (
           <div className="text-center my-2">
-            <span className="text-xs bg-gray-200 px-3 py-1 rounded-full">BYE</span>
+            <span className="text-[10px] bg-[color:var(--neon-cyan)]/10 text-neon border border-[color:var(--border-neon)] px-3 py-1 rounded-full uppercase tracking-widest font-bold">
+              BYE
+            </span>
           </div>
         )}
 
         {/* Jugador 2 */}
         {!esBye && (
-          <div className={`text-center mb-3 ${match.ganador_final === j2 && !match.empate ? 'bg-green-50 rounded-lg py-2' : ''}`}>
-            <p className="font-bold text-lg">{match.jugador2_nombre || 'Desconocido'}</p>
-            <p className="text-xs text-gray-500">#{j2 || '-'}</p>
+          <div className={`text-center mb-3 rounded-lg py-2 ${
+            match.ganador_final === j2 && !match.empate
+              ? 'bg-green-500/10 border border-green-500/40 shadow-[0_0_10px_rgba(34,197,94,0.4)]'
+              : ''
+          }`}>
+            <p className="font-bold text-lg text-[color:var(--text-main)]">
+              {match.jugador2_nombre || 'Desconocido'}
+            </p>
+            <p className="text-xs text-muted font-mono">#{j2 || '-'}</p>
           </div>
         )}
 
         {/* Empate */}
         {match.empate && match.confirmado && (
-          <p className="text-center text-yellow-600 font-bold text-sm mb-2">Empate</p>
+          <p className="text-center text-yellow-400 font-bold text-sm mb-2 uppercase tracking-widest">
+            Empate
+          </p>
         )}
 
         {/* Botones de reporte */}
@@ -97,21 +127,21 @@ export default function MatchCard({ match, onReport, userId, reportando = false,
             <button
               onClick={() => onReport(match, j1)}
               disabled={reportando}
-              className={`flex-1 py-2 rounded-lg font-semibold text-sm disabled:opacity-50 ${getBotonColor(match.ganador_reportado_1 === j1 || match.ganador_final === j1)}`}
+              className={`flex-1 py-2 rounded-md font-bold text-xs uppercase tracking-widest disabled:opacity-50 transition-all ${getBotonColor(match.ganador_reportado_1 === j1 || match.ganador_final === j1)}`}
             >
               {match.jugador1_nombre?.split(' ')[0] || 'J1'}
             </button>
             <button
               onClick={() => onReport(match, j2)}
               disabled={reportando}
-              className={`flex-1 py-2 rounded-lg font-semibold text-sm disabled:opacity-50 ${getBotonColor(match.ganador_reportado_2 === j2 || match.ganador_final === j2)}`}
+              className={`flex-1 py-2 rounded-md font-bold text-xs uppercase tracking-widest disabled:opacity-50 transition-all ${getBotonColor(match.ganador_reportado_2 === j2 || match.ganador_final === j2)}`}
             >
               {match.jugador2_nombre?.split(' ')[0] || 'J2'}
             </button>
             <button
               onClick={() => onReport(match, 'empate')}
               disabled={reportando}
-              className={`px-4 py-2 rounded-lg font-semibold text-sm disabled:opacity-50 ${getBotonEmpateColor()}`}
+              className={`px-4 py-2 rounded-md font-bold text-xs uppercase tracking-widest disabled:opacity-50 transition-all ${getBotonEmpateColor()}`}
             >
               Empate
             </button>
@@ -119,21 +149,21 @@ export default function MatchCard({ match, onReport, userId, reportando = false,
         )}
 
         {!esBye && !puedeReportar && (
-          <p className="text-center text-xs text-gray-400 mt-2">No participas en este match</p>
+          <p className="text-center text-xs text-muted mt-2">No participas en este match</p>
         )}
 
         {!esBye && yaReporto && !match.confirmado && (
-          <p className="text-center text-xs text-yellow-600 mt-2">Esperando confirmación del rival</p>
+          <p className="text-center text-xs text-yellow-400 mt-2">Esperando confirmación del rival</p>
         )}
 
         {esBye && (
-          <p className="text-center text-green-600 font-bold text-sm mt-2">
+          <p className="text-center text-green-400 font-bold text-sm mt-2 uppercase tracking-widest">
             Victoria automática para {match.jugador1_nombre}
           </p>
         )}
 
         {reportando && (
-          <p className="text-center text-xs text-gray-500 mt-2">Guardando resultado...</p>
+          <p className="text-center text-xs text-muted mt-2">Guardando resultado...</p>
         )}
       </div>
     </div>

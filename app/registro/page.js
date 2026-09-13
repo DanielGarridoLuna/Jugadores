@@ -42,7 +42,6 @@ export default function RegistroPage() {
     setError('')
 
     try {
-      // Verificar si ya existe
       const { data: existe } = await supabase
         .from('jugadores')
         .select('id')
@@ -55,7 +54,6 @@ export default function RegistroPage() {
         return
       }
 
-      // Registrar jugador
       const { data: jugador, error: insertError } = await supabase
         .from('jugadores')
         .insert({
@@ -83,10 +81,13 @@ export default function RegistroPage() {
   }
 
   return (
-    <div className="min-h-screen bg-primary flex flex-col">
+    <div className="min-h-screen flex flex-col">
       {/* Header */}
       <div className="p-4">
-        <Link href="/" className="inline-flex items-center gap-2 text-white">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 text-neon hover:text-neon-pink transition-colors"
+        >
           <ArrowLeft size={20} /> Volver
         </Link>
       </div>
@@ -94,8 +95,8 @@ export default function RegistroPage() {
       {/* Formulario */}
       <div className="flex-1 flex flex-col justify-center px-5 pb-20">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-white">Registro</h1>
-          <p className="text-white/80 mt-2">Crea tu cuenta de jugador</p>
+          <h1 className="text-3xl font-bold text-neon uppercase tracking-widest">Registro</h1>
+          <p className="text-muted mt-2">Crea tu cuenta de jugador</p>
         </div>
 
         <div className="space-y-4">
@@ -103,7 +104,7 @@ export default function RegistroPage() {
             type="tel"
             inputMode="numeric"
             placeholder="Player ID *"
-            className="w-full bg-white rounded-xl px-4 py-3 text-base text-gray-800 placeholder-gray-400"
+            className="w-full bg-white/5 border border-[color:var(--border-neon-soft)] rounded-lg px-4 py-3 text-base text-[color:var(--text-main)] placeholder-[color:var(--text-muted)] focus:outline-none focus:border-[color:var(--neon-cyan)] focus:shadow-[0_0_14px_rgba(0,229,255,0.5)] transition-all"
             value={playerId}
             onChange={(e) => setPlayerId(e.target.value.replace(/\D/g, ''))}
           />
@@ -111,7 +112,7 @@ export default function RegistroPage() {
           <input
             type="text"
             placeholder="Nombre completo *"
-            className="w-full bg-white rounded-xl px-4 py-3 text-base text-gray-800 placeholder-gray-400"
+            className="w-full bg-white/5 border border-[color:var(--border-neon-soft)] rounded-lg px-4 py-3 text-base text-[color:var(--text-main)] placeholder-[color:var(--text-muted)] focus:outline-none focus:border-[color:var(--neon-cyan)] focus:shadow-[0_0_14px_rgba(0,229,255,0.5)] transition-all"
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
           />
@@ -121,7 +122,7 @@ export default function RegistroPage() {
             inputMode="numeric"
             placeholder="Año de nacimiento (opcional)"
             maxLength={4}
-            className="w-full bg-white rounded-xl px-4 py-3 text-base text-gray-800 placeholder-gray-400"
+            className="w-full bg-white/5 border border-[color:var(--border-neon-soft)] rounded-lg px-4 py-3 text-base text-[color:var(--text-main)] placeholder-[color:var(--text-muted)] focus:outline-none focus:border-[color:var(--neon-cyan)] focus:shadow-[0_0_14px_rgba(0,229,255,0.5)] transition-all"
             value={anio}
             onChange={(e) => setAnio(e.target.value.replace(/\D/g, ''))}
           />
@@ -130,19 +131,19 @@ export default function RegistroPage() {
             type="tel"
             inputMode="numeric"
             placeholder="Teléfono (opcional)"
-            className="w-full bg-white rounded-xl px-4 py-3 text-base text-gray-800 placeholder-gray-400"
+            className="w-full bg-white/5 border border-[color:var(--border-neon-soft)] rounded-lg px-4 py-3 text-base text-[color:var(--text-main)] placeholder-[color:var(--text-muted)] focus:outline-none focus:border-[color:var(--neon-cyan)] focus:shadow-[0_0_14px_rgba(0,229,255,0.5)] transition-all"
             value={telefono}
             onChange={(e) => setTelefono(e.target.value.replace(/\D/g, ''))}
           />
 
           {error && (
-            <p className="text-yellow-200 text-sm text-center">{error}</p>
+            <p className="text-neon-pink text-sm text-center">{error}</p>
           )}
 
           <button
             onClick={registrar}
             disabled={isLoading}
-            className="w-full bg-secondary text-white py-3 rounded-xl font-bold text-lg mt-2 disabled:opacity-50 transition active:scale-95"
+            className="w-full py-3 rounded-lg font-bold text-lg uppercase tracking-widest mt-2 bg-[color:var(--secondary)] text-white border border-[color:var(--neon-violet)] shadow-[0_0_18px_rgba(124,77,255,0.6)] hover:shadow-[0_0_24px_rgba(124,77,255,0.9)] transition-all disabled:opacity-50 active:scale-95"
           >
             {isLoading ? 'Registrando...' : 'Registrarse'}
           </button>
