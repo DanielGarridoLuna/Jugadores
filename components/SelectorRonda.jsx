@@ -1,6 +1,18 @@
+import { useEffect, useState } from 'react'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
-export default function SelectorRonda({ rondas, rondaSeleccionada, setRonda }) {
+export default function SelectorRonda({ rondas, rondaSeleccionada, setRonda, mostrarTemporizador = false }) {
+  const rondaActual = rondas?.find(r => String(r.id) === String(rondaSeleccionada))
+  const indexActual = rondas?.findIndex(r => String(r.id) === String(rondaSeleccionada)) ?? -1
+  const [ahora, setAhora] = useState(null)
+
+  useEffect(() => {
+    if (!mostrarTemporizador || rondaActual?.status !== 'activa' || !rondaActual.started_at) return
+
+    const intervalo = window.setInterval(() => setAhora(Date.now()), 1000)
+    return () => window.clearInterval(intervalo)
+  }, [mostrarTemporizador, rondaActual?.id, rondaActual?.status, rondaActual?.started_at])
+
   if (!rondas || rondas.length === 0) {
     return (
       <div className="surface p-4 text-center mb-4">
@@ -9,18 +21,23 @@ export default function SelectorRonda({ rondas, rondaSeleccionada, setRonda }) {
     )
   }
 
-  const rondaActual = rondas.find(r => String(r.id) === String(rondaSeleccionada))
-  const indexActual = rondas.findIndex(r => String(r.id) === String(rondaSeleccionada))
+  const inicio = rondaActual?.started_at ? new Date(rondaActual.started_at).getTime() : null
+  const tiempoRestante = Number.isFinite(inicio) && ahora !== null
+    ? Math.max(0, inicio + 35 * 60 * 1000 - ahora)
+    : null
+  const cuentaRegresiva = tiempoRestante === null
+    ? null
+    : `${String(Math.floor(tiempoRestante / 60000)).padStart(2, '0')}:${String(Math.floor((tiempoRestante % 60000) / 1000)).padStart(2, '0')}`
 
   const siguiente = () => {
-    if (indexActual < rondas.length - 1) {
-      setRonda(rondas[indexActual + 1].id)
+    if (indexActual > 0) {
+      setRonda(rondas[indexActual - 1].id)
     }
   }
 
   const anterior = () => {
-    if (indexActual > 0) {
-      setRonda(rondas[indexActual - 1].id)
+    if (indexActual < rondas.length - 1) {
+      setRonda(rondas[indexActual + 1].id)
     }
   }
 
@@ -29,7 +46,7 @@ export default function SelectorRonda({ rondas, rondaSeleccionada, setRonda }) {
       <div className="flex items-center justify-between">
         <button
           onClick={anterior}
-          disabled={indexActual === 0}
+          disabled={indexActual === rondas.length - 1}
           className="p-2 rounded-full disabled:opacity-30 text-neon hover:bg-white/5 transition-colors"
         >
           <ChevronLeft size={24} style={{ filter: 'drop-shadow(0 0 6px var(--neon-cyan))' }} />
@@ -50,11 +67,22 @@ export default function SelectorRonda({ rondas, rondaSeleccionada, setRonda }) {
               Activa
             </span>
           )}
+          {mostrarTemporizador && rondaActual?.status === 'activa' && (
+            <p className={`mt-1 text-sm font-semibold ${tiempoRestante === 0 ? 'text-red-400' : 'text-neon'}`}>
+              {!rondaActual.started_at
+                ? 'Temporizador no disponible'
+                : ahora === null
+                  ? 'Calculando tiempo...'
+                  : tiempoRestante === 0
+                    ? 'Tiempo agotado'
+                    : `Tiempo restante ${cuentaRegresiva}`}
+            </p>
+          )}
         </div>
 
         <button
           onClick={siguiente}
-          disabled={indexActual === rondas.length - 1}
+          disabled={indexActual === 0}
           className="p-2 rounded-full disabled:opacity-30 text-neon hover:bg-white/5 transition-colors"
         >
           <ChevronRight size={24} style={{ filter: 'drop-shadow(0 0 6px var(--neon-cyan))' }} />

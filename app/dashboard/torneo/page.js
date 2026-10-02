@@ -360,6 +360,13 @@ export default function TorneoPage() {
     return <span className="w-5 text-center text-muted">{posicion}</span>
   }
 
+  const torneoActual = torneos.find(t => String(t.id) === String(torneoSeleccionado))
+  const mostrarTemporizador = torneoActual?.nombre?.trim().toLowerCase() === 'pokémon diario'
+  const seleccionarRonda = (rondaId) => {
+    setRondaSeleccionada(rondaId)
+    cargarMatches(rondaId, eventoActual?.id)
+  }
+
   if (cargando) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -458,7 +465,8 @@ export default function TorneoPage() {
               <SelectorRonda
                 rondas={rondas}
                 rondaSeleccionada={rondaSeleccionada}
-                setRonda={setRondaSeleccionada}
+                setRonda={seleccionarRonda}
+                mostrarTemporizador={mostrarTemporizador}
               />
 
               {matches.length === 0 ? (
