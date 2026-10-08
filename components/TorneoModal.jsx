@@ -61,13 +61,15 @@ export default function TorneoModal({ isOpen, onClose }) {
     for (const torneo of torneosData) {
       const { data: inscripcionHoy } = await supabase
         .from('inscripciones')
-        .select('id')
+        .select('id, retirado')
         .eq('jugador_id', jugador.id)
         .eq('torneo_id', torneo.id)
         .eq('fecha', fechaHoy)
         .maybeSingle()
       
-      mapaInscripciones[torneo.id] = !!inscripcionHoy
+      mapaInscripciones[torneo.id] = inscripcionHoy?.retirado
+        ? 'retirado'
+        : Boolean(inscripcionHoy)
     }
     
     setInscripciones(mapaInscripciones)
@@ -99,7 +101,7 @@ export default function TorneoModal({ isOpen, onClose }) {
       
       const { data: yaInscritoHoy } = await supabase
         .from('inscripciones')
-        .select('id')
+        .select('id, retirado')
         .eq('jugador_id', jugador.id)
         .eq('torneo_id', torneoId)
         .eq('fecha', fechaHoy)
@@ -108,10 +110,15 @@ export default function TorneoModal({ isOpen, onClose }) {
       if (yaInscritoHoy) {
         setMensajeModal({
           type: 'info',
-          title: 'Ya inscrito',
-          message: 'Ya estás inscrito en este torneo para hoy'
+          title: yaInscritoHoy.retirado ? 'Retiro registrado' : 'Ya inscrito',
+          message: yaInscritoHoy.retirado
+            ? 'Ya te retiraste de este torneo para hoy. El administrador puede ver tu retiro.'
+            : 'Ya estás inscrito en este torneo para hoy'
         })
-        setInscripciones(prev => ({ ...prev, [torneoId]: true }))
+        setInscripciones(prev => ({
+          ...prev,
+          [torneoId]: yaInscritoHoy.retirado ? 'retirado' : true
+        }))
         setInscribiendo(null)
         return
       }
@@ -234,6 +241,7 @@ export default function TorneoModal({ isOpen, onClose }) {
               <div className="space-y-3">
                 {torneos.map(t => {
                   const inscrito = inscripciones[t.id]
+                  const retirado = inscrito === 'retirado'
                   return (
                     <div key={t.id} className="bg-white/5 border border-[color:var(--border-neon-soft)] rounded-lg p-4">
                       <h3 className="font-bold text-[color:var(--text-main)]">{t.nombre}</h3>
@@ -241,7 +249,11 @@ export default function TorneoModal({ isOpen, onClose }) {
                         <p className="text-muted text-sm mt-1">{t.descripcion}</p>
                       )}
                       
-                      {inscrito === true ? (
+                      {retirado ? (
+                        <div className="mt-3 bg-red-500/10 text-red-400 border border-red-500/40 px-4 py-2 rounded-md text-xs text-center uppercase tracking-widest font-bold">
+                          Retiro registrado
+                        </div>
+                      ) : inscrito === true ? (
                         <div className="mt-3 bg-green-500/10 text-green-400 border border-green-500/40 px-4 py-2 rounded-md text-xs text-center uppercase tracking-widest font-bold shadow-[0_0_10px_rgba(34,197,94,0.4)]">
                           Ya inscrito
                         </div>

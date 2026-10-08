@@ -3,9 +3,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { storage } from '@/utils/storage'
-import { Trophy, Medal, TrendingUp, Calendar, Swords, LayoutList } from 'lucide-react'
+import { Trophy, Medal, TrendingUp, Calendar, Swords, LayoutList, UserMinus } from 'lucide-react'
 import MatchCard from '@/components/MatchCard'
 import SelectorRonda from '@/components/SelectorRonda'
+import ConfirmModal from '@/components/ConfirmModal'
 import { useRouter } from 'next/navigation'
 
 const normalizarId = (valor) => {
@@ -24,6 +25,9 @@ export default function TorneoPage() {
   const [cargando, setCargando] = useState(true)
   const [mensaje, setMensaje] = useState(null)
   const [pestañaActiva, setPestañaActiva] = useState('ronda')
+  const [inscripcionesRetiradas, setInscripcionesRetiradas] = useState([])
+  const [modalRetiroAbierto, setModalRetiroAbierto] = useState(false)
+  const [retirando, setRetirando] = useState(false)
   
   const [eventoActual, setEventoActual] = useState(null)
   const [rondas, setRondas] = useState([])
@@ -41,6 +45,7 @@ export default function TorneoPage() {
   }, [])
 
   async function cargarTorneosEInscripciones() {
+    setCargando(true)
     const { data: torneosData } = await supabase
       .from('torneos')
       .select('*')
@@ -65,11 +70,12 @@ export default function TorneoPage() {
     }
     
     const torneosConInscripcion = []
+    const torneosRetirados = []
     
     for (const torneo of torneosData) {
       const { data: evento } = await supabase
         .from('eventos')
-        .select('id')
+        .select('id, fecha')
         .eq('torneo_id', torneo.id)
         .eq('archivado', false)
         .order('fecha', { ascending: false })
@@ -78,19 +84,36 @@ export default function TorneoPage() {
       if (evento?.length > 0) {
         const { data: inscripcion } = await supabase
           .from('inscripciones')
-          .select('id')
+          .select('id, retirado, finalizada')
           .eq('jugador_id', jugador.id)
           .eq('torneo_id', torneo.id)
           .eq('evento_id', evento[0].id)
           .maybeSingle()
         
-        if (inscripcion) {
-          torneosConInscripcion.push(torneo)
+        if (inscripcion?.retirado) {
+          torneosRetirados.push({
+            ...torneo,
+            evento_fecha: evento[0].fecha
+          })
+        } else if (inscripcion) {
+          const { count: standingsCount, error: standingsError } = await supabase
+            .from('standings')
+            .select('id', { count: 'exact', head: true })
+            .eq('evento_id', evento[0].id)
+
+          torneosConInscripcion.push({
+            ...torneo,
+            inscripcion_id: inscripcion.id,
+            jugador_id: jugador.id,
+            inscripcion_finalizada: inscripcion.finalizada || standingsCount > 0,
+            error_verificacion_standings: standingsError?.message || null
+          })
         }
       }
     }
     
     setTorneosInscritos(torneosConInscripcion)
+    setInscripcionesRetiradas(torneosRetirados)
     
     if (torneosConInscripcion.length > 0) {
       let torneoId = torneoGuardadoId
@@ -107,6 +130,11 @@ export default function TorneoPage() {
       await cargarEventoActual(torneoId)
       await cargarEventosStandings(torneoId)
     } else {
+      setTorneoSeleccionado(null)
+      setEventoActual(null)
+      setRondas([])
+      setRondaSeleccionada(null)
+      setMatches([])
       setMensaje('No estás inscrito en ningún torneo')
     }
     
@@ -282,12 +310,50 @@ export default function TorneoPage() {
     }
     
     setTorneoSeleccionado(torneoId)
+    setModalRetiroAbierto(false)
     storage.setItem('torneo_seleccionado', torneoId)
     setRondas([])
     setRondaSeleccionada(null)
     setMatches([])
     await cargarEventoActual(torneoId)
     await cargarEventosStandings(torneoId)
+  }
+
+  const retirarseDelEvento = async () => {
+    const inscripcion = torneosInscritos.find(
+      torneo => String(torneo.id) === String(torneoSeleccionado)
+    )
+
+    if (!inscripcion) {
+      setMensaje('No se encontró tu inscripción para este evento')
+      return
+    }
+    if (inscripcion.inscripcion_finalizada || inscripcion.error_verificacion_standings) {
+      setMensaje(
+        inscripcion.error_verificacion_standings
+          ? `No se pudo verificar si ya se asignaron tickets: ${inscripcion.error_verificacion_standings}`
+          : 'Los standings ya se subieron y los tickets fueron asignados. El retiro está cerrado.'
+      )
+      return
+    }
+
+    setRetirando(true)
+    const { error } = await supabase
+      .from('inscripciones')
+      .update({ retirado: true })
+      .eq('id', inscripcion.inscripcion_id)
+      .eq('jugador_id', inscripcion.jugador_id)
+
+    if (error) {
+      setMensaje(`No se pudo registrar tu retiro: ${error.message}`)
+      setRetirando(false)
+      return
+    }
+
+    setModalRetiroAbierto(false)
+    await cargarTorneosEInscripciones()
+    setMensaje('Te retiraste del evento. El administrador ya puede ver el cambio.')
+    setRetirando(false)
   }
 
   const reportar = async (match, ganador) => {
@@ -361,6 +427,9 @@ export default function TorneoPage() {
   }
 
   const torneoActual = torneos.find(t => String(t.id) === String(torneoSeleccionado))
+  const inscripcionActual = torneosInscritos.find(
+    torneo => String(torneo.id) === String(torneoSeleccionado)
+  )
   const mostrarTemporizador = torneoActual?.nombre?.trim().toLowerCase() === 'pokémon diario'
   const seleccionarRonda = (rondaId) => {
     setRondaSeleccionada(rondaId)
@@ -381,8 +450,24 @@ export default function TorneoPage() {
         <h1 className="text-2xl font-bold text-neon mb-4">Torneo</h1>
         <div className="surface p-6 text-center">
           <Trophy size={48} className="text-muted mx-auto mb-3" />
-          <p className="text-neon-pink font-medium mb-2">No has participado en ningún torneo</p>
-          <p className="text-muted text-sm">Inscríbete a un torneo para ver tu ronda y standings</p>
+          {inscripcionesRetiradas.length > 0 ? (
+            <>
+              <p className="text-neon-pink font-medium mb-2">Te retiraste de este evento</p>
+              {inscripcionesRetiradas.map(torneo => (
+                <p key={torneo.id} className="text-muted text-sm">
+                  {torneo.nombre} · {torneo.evento_fecha}
+                </p>
+              ))}
+              <p className="text-muted text-sm mt-2">
+                Tu retiro quedó registrado y no aparecerás en las rondas futuras.
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="text-neon-pink font-medium mb-2">No has participado en ningún torneo</p>
+              <p className="text-muted text-sm">Inscríbete a un torneo para ver tu ronda y standings</p>
+            </>
+          )}
           <button
             onClick={() => router.push('/dashboard')}
             className="mt-4 btn-neon"
@@ -420,8 +505,23 @@ export default function TorneoPage() {
       )}
 
       {mensaje && (
-        <div className="bg-red-500/10 text-red-400 border border-red-500/40 p-3 rounded-lg mb-4 text-center text-sm">
+        <div className={`p-3 rounded-lg mb-4 text-center text-sm border ${
+          mensaje.startsWith('Te retiraste')
+            ? 'bg-green-500/10 text-green-400 border-green-500/40'
+            : 'bg-red-500/10 text-red-400 border-red-500/40'
+        }`}>
           {mensaje}
+        </div>
+      )}
+
+      {inscripcionesRetiradas.length > 0 && (
+        <div className="surface p-3 mb-4 text-sm text-muted">
+          {inscripcionesRetiradas.map(torneo => (
+            <p key={torneo.id}>
+              Retiro registrado: <span className="font-semibold text-neon-pink">{torneo.nombre}</span>
+              {' · '}{torneo.evento_fecha}
+            </p>
+          ))}
         </div>
       )}
 
@@ -461,6 +561,25 @@ export default function TorneoPage() {
               <p className="text-xs text-muted mb-3 uppercase tracking-widest">
                 Evento: <span className="font-semibold text-[color:var(--text-main)]">{eventoActual.fecha}</span>
               </p>
+              {inscripcionActual &&
+              !inscripcionActual.inscripcion_finalizada &&
+              !inscripcionActual.error_verificacion_standings ? (
+                <button
+                  onClick={() => setModalRetiroAbierto(true)}
+                  className="mb-4 w-full py-2 rounded-md text-sm font-bold uppercase tracking-widest text-red-400 bg-red-500/10 border border-red-500/40 hover:bg-red-500/20 transition-colors flex items-center justify-center gap-2"
+                >
+                  <UserMinus size={16} />
+                  Retirarme del evento
+                </button>
+              ) : inscripcionActual?.inscripcion_finalizada ? (
+                <p className="surface mb-4 p-3 text-center text-sm text-muted">
+                  El evento ya finalizó y sus tickets fueron asignados; el retiro está cerrado.
+                </p>
+              ) : inscripcionActual?.error_verificacion_standings ? (
+                <p className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-center text-sm text-amber-300">
+                  No se pudo verificar si los tickets ya fueron asignados. El retiro está temporalmente deshabilitado.
+                </p>
+              ) : null}
 
               <SelectorRonda
                 rondas={rondas}
@@ -574,6 +693,16 @@ export default function TorneoPage() {
           )}
         </>
       )}
+
+      <ConfirmModal
+        isOpen={modalRetiroAbierto}
+        onClose={() => setModalRetiroAbierto(false)}
+        onConfirm={retirarseDelEvento}
+        title="Retirarte del evento"
+        message="¿Confirmas que deseas retirarte? No aparecerás en las rondas futuras y se conservará tu historial de este evento."
+        confirmText="Sí, retirarme"
+        isLoading={retirando}
+      />
     </div>
   )
 }

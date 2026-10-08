@@ -4,7 +4,17 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { storage } from '@/utils/storage'
-import { User, Edit2, Save, Phone, Calendar, Hash, LogOut, Trophy } from 'lucide-react'
+import { User, Edit2, Save, Phone, Calendar, Hash, LogOut, Trophy, Ticket } from 'lucide-react'
+
+function formatearFechaTicket(fecha) {
+  if (!fecha) return 'Fecha no disponible'
+
+  return new Intl.DateTimeFormat('es-MX', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+    timeZone: 'America/Mexico_City'
+  }).format(new Date(fecha))
+}
 
 export default function PerfilPage() {
   const router = useRouter()
@@ -21,6 +31,11 @@ export default function PerfilPage() {
   
   const [torneosPagadosMes, setTorneosPagadosMes] = useState(0)
   const [cargandoTorneos, setCargandoTorneos] = useState(true)
+  const [historialTickets, setHistorialTickets] = useState([])
+  const [cargandoTickets, setCargandoTickets] = useState(false)
+  const [errorTickets, setErrorTickets] = useState(null)
+  const [historialTicketsVisible, setHistorialTicketsVisible] = useState(false)
+  const [historialTicketsCargado, setHistorialTicketsCargado] = useState(false)
 
   useEffect(() => {
     if (playerId) {
@@ -30,6 +45,35 @@ export default function PerfilPage() {
       router.push('/')
     }
   }, [playerId])
+
+  async function alternarHistorialTickets() {
+    if (historialTicketsVisible) {
+      setHistorialTicketsVisible(false)
+      return
+    }
+
+    setHistorialTicketsVisible(true)
+
+    if (historialTicketsCargado || cargandoTickets || !jugador?.id) return
+
+    setCargandoTickets(true)
+
+    const { data, error } = await supabase
+      .from('tickets_movimientos')
+      .select('id, cantidad, motivo, descripcion, created_at')
+      .eq('jugador_id', jugador.id)
+      .order('created_at', { ascending: false })
+
+    if (error) {
+      setErrorTickets(`No se pudo cargar tu historial: ${error.message}`)
+    } else {
+      setHistorialTickets(data || [])
+      setErrorTickets(null)
+      setHistorialTicketsCargado(true)
+    }
+
+    setCargandoTickets(false)
+  }
 
   async function cargarPerfil() {
     const { data, error } = await supabase
@@ -43,6 +87,8 @@ export default function PerfilPage() {
       setNombre(data.nombre)
       setTelefono(data.telefono || '')
       setAnio(data.anio_nacimiento || '')
+    } else {
+      setMensaje(`No se pudo cargar tu perfil: ${error?.message || 'jugador no encontrado'}`)
     }
     setCargando(false)
   }
@@ -193,6 +239,79 @@ export default function PerfilPage() {
           )}
         </div>
       )}
+
+      <section className="surface mb-4 overflow-hidden">
+        <div className="flex items-center gap-3 border-b border-[color:var(--border-neon-soft)] p-4">
+          <Ticket size={28} className="text-yellow-400" />
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-muted">Mis tickets</p>
+            <p className="text-3xl font-bold text-yellow-400">{jugador?.tickets ?? 0}</p>
+          </div>
+          {historialTicketsCargado && (
+            <div className="text-right">
+              <p className="text-xs text-muted">Tickets ganados</p>
+              <p className="font-bold text-green-400">
+                +{historialTickets.filter(movimiento => Number(movimiento.cantidad) > 0).reduce((total, movimiento) => total + Number(movimiento.cantidad || 0), 0)}
+              </p>
+            </div>
+          )}
+        </div>
+        <div className="p-4">
+          <button
+            type="button"
+            onClick={alternarHistorialTickets}
+            disabled={cargandoTickets || !jugador}
+            aria-expanded={historialTicketsVisible}
+            aria-controls="historial-tickets"
+            className="flex w-full items-center justify-between gap-3 rounded-lg border border-[color:var(--border-neon-soft)] px-4 py-3 text-left font-semibold text-neon transition-colors hover:bg-white/5 disabled:cursor-wait disabled:opacity-60"
+          >
+            <span>
+              {historialTicketsVisible ? 'Ocultar' : 'Ver'} historial de tickets
+            </span>
+            <span aria-hidden="true">{historialTicketsVisible ? '−' : '+'}</span>
+          </button>
+          {historialTicketsVisible && (
+            <div id="historial-tickets" className="mt-3">
+              <h2 className="mb-2 text-sm font-bold uppercase tracking-widest text-neon">
+                Historial de tickets
+              </h2>
+              {cargandoTickets ? (
+                <p className="text-sm text-muted">Cargando historial...</p>
+              ) : errorTickets ? (
+                <p className="text-sm text-red-400">{errorTickets}</p>
+              ) : historialTickets.length === 0 ? (
+                <p className="text-sm text-muted">Aún no tienes movimientos de tickets registrados.</p>
+              ) : (
+                <div className="divide-y divide-[color:var(--border-neon-soft)]">
+                  {historialTickets.map(movimiento => (
+                    <div key={movimiento.id} className="flex items-start justify-between gap-3 py-3">
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${Number(movimiento.cantidad) < 0 ? 'bg-red-500/10 text-red-300' : 'bg-green-500/10 text-green-300'}`}>
+                            {Number(movimiento.cantidad) < 0 ? 'Gastaste' : 'Ganaste'}
+                          </span>
+                          <p className="font-medium text-[color:var(--text-main)]">
+                            {movimiento.motivo || (Number(movimiento.cantidad) < 0 ? 'Gasto de tickets' : 'Tickets ganados')}
+                          </p>
+                        </div>
+                        {movimiento.descripcion && (
+                          <p className="text-sm text-muted">{movimiento.descripcion}</p>
+                        )}
+                        <p className="mt-1 text-xs text-muted">
+                          {formatearFechaTicket(movimiento.created_at)}
+                        </p>
+                      </div>
+                      <p className={`shrink-0 font-bold ${Number(movimiento.cantidad) < 0 ? 'text-red-400' : 'text-green-400'}`}>
+                        {Number(movimiento.cantidad) > 0 ? '+' : ''}{movimiento.cantidad}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
 
       <div className="surface overflow-hidden">
         <div className="bg-gradient-to-r from-primary to-secondary p-6 flex justify-center">
