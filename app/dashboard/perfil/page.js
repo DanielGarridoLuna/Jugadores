@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '@/lib/supabase'
 import { storage } from '@/utils/storage'
+import NotificationSettings from '@/components/NotificationSettings'
+import { disableWebPush } from '@/lib/web-push'
 import { User, Edit2, Save, Phone, Calendar, Hash, LogOut, Trophy, Ticket } from 'lucide-react'
 
 function formatearFechaTicket(fecha) {
@@ -155,7 +157,13 @@ export default function PerfilPage() {
     setGuardando(false)
   }
 
-  const handleCerrarSesion = () => {
+  const handleCerrarSesion = async () => {
+    try {
+      await disableWebPush()
+    } catch (error) {
+      setMensaje(error.message)
+      return
+    }
     storage.removeItem('player_id')
     storage.removeItem('jugador_nombre')
     storage.removeItem('torneo_seleccionado')
@@ -196,6 +204,8 @@ export default function PerfilPage() {
           {mensaje}
         </div>
       )}
+
+      <NotificationSettings playerId={playerId} />
 
       {!cargandoTorneos && (
         <div className={`mb-4 rounded-lg p-4 ${

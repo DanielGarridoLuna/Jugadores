@@ -1,0 +1,3 @@
+[functions.tournament-web-push]
+# Esta función verifica su propio secreto, leído desde Vault.
+verify_jwt = false
