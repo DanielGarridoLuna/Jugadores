@@ -94,6 +94,54 @@ test('service worker procesa payload inválido y abre solo el torneo del mismo s
   assert.equal(opened, origin + '/dashboard/torneo')
 })
 
+test('el clic abre primero la PWA sin intentar navegar una pestaña antigua', async () => {
+  const handlers = {}
+  const actions = []
+  let pending
+  const self = {
+    location: { origin: 'https://aldebaran-torneos.vercel.app' },
+    addEventListener: (name, fn) => { handlers[name] = fn },
+    clients: {
+      openWindow: async () => { actions.push('open'); return {} },
+      matchAll: async () => { throw Error('No debe consultar pestañas') },
+    },
+  }
+  vm.runInNewContext(read('public/sw.js'), { self, URL })
+  handlers.notificationclick({ notification: { close() {} }, waitUntil: p => { pending = p } })
+  await pending
+  assert.deepEqual(actions, ['open'])
+})
+
+test('si Brave rechaza abrir ventana, enfoca antes de navegar y tolera ventanas cerradas', async () => {
+  const handlers = {}
+  const actions = []
+  let pending
+  const origin = 'https://aldebaran-torneos.vercel.app'
+  const client = { url: origin + '/dashboard/perfil', focus: async () => { actions.push('focus'); return client }, navigate: async url => { actions.push(url) } }
+  const self = {
+    location: { origin }, addEventListener: (name, fn) => { handlers[name] = fn },
+    clients: {
+      openWindow: async () => { throw Error('No permitido') },
+      matchAll: async () => [{ url: origin + '/', focus: async () => { throw Error('Cerrada') } }, client],
+    },
+  }
+  vm.runInNewContext(read('public/sw.js'), { self, URL })
+  handlers.notificationclick({ notification: { close() {} }, waitUntil: p => { pending = p } })
+  await pending
+  assert.deepEqual(actions, ['focus', origin + '/dashboard/torneo'])
+})
+
+test('la actualización del receptor se activa y controla las ventanas existentes', async () => {
+  const handlers = {}
+  const actions = []
+  let pending
+  const self = { addEventListener: (name, fn) => { handlers[name] = fn }, skipWaiting: async () => actions.push('skipWaiting'), clients: { claim: async () => actions.push('claim') } }
+  vm.runInNewContext(read('public/sw.js'), { self, URL })
+  handlers.install({ waitUntil: p => { pending = p } }); await pending
+  handlers.activate({ waitUntil: p => { pending = p } }); await pending
+  assert.deepEqual(actions, ['skipWaiting', 'claim'])
+})
+
 function edgeHarness() {
   let handler, mode = 'ok', configReads = 0, sent = 0, deleted = 0
   const config = { pwa_webhook_secret: 'test-secret', pwa_vapid_subject: 'https://example.test', pwa_vapid_public_key: 'public', pwa_vapid_private_key: 'private' }
