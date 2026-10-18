@@ -1,5 +1,7 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+La web está configurada como PWA instalable, con íconos para Android y iPhone y apertura en una ventana sin barra de direcciones. Publicar con HTTPS y usar «Instalar aplicación» o «Agregar a pantalla de inicio» en el navegador. La instalación no requiere variables adicionales de entorno; los torneos siguen necesitando conexión a internet. Las notificaciones push no están habilitadas.
+
 ## Getting Started
 
 First, run the development server:

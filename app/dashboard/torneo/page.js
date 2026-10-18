@@ -378,45 +378,38 @@ export default function TorneoPage() {
       return
     }
 
-    if (ganador === 'empate') {
-      await supabase
-        .from('matches')
-        .update({
-          empate: true,
-          ganador_final: null,
-          confirmado: false
-        })
-        .eq('id', match.id)
-    } else {
-      const campo = user === j1 ? 'ganador_reportado_1' : 'ganador_reportado_2'
-      await supabase
-        .from('matches')
-        .update({
-          [campo]: ganador,
-          empate: false
-        })
-        .eq('id', match.id)
-
-      const { data: updated } = await supabase
-        .from('matches')
-        .select('*')
-        .eq('id', match.id)
-        .single()
-
-      if (updated.ganador_reportado_1 && updated.ganador_reportado_2 &&
-          updated.ganador_reportado_1 === updated.ganador_reportado_2) {
-        await supabase
-          .from('matches')
-          .update({
-            ganador_final: updated.ganador_reportado_1,
-            confirmado: true
-          })
-          .eq('id', match.id)
-      }
+    const esEmpate = ganador === 'empate'
+    if (!esEmpate && (!ganador || (ganador !== j1 && ganador !== j2))) {
+      setMensaje('Selecciona un resultado válido')
+      setReportandoId(null)
+      return
     }
 
-    await cargarMatches(rondaSeleccionada, eventoActual.id)
-    setReportandoId(null)
+    try {
+      const campo = user === j1 ? 'ganador_reportado_1' : 'ganador_reportado_2'
+      const { data, error } = await supabase
+        .from('matches')
+        .update({
+          [campo]: esEmpate ? null : ganador,
+          empate: esEmpate,
+          ganador_final: esEmpate ? null : ganador,
+          confirmado: true
+        })
+        .eq('id', match.id)
+        .or('confirmado.is.null,confirmado.eq.false')
+        .select('id')
+
+      if (error) throw error
+
+      setMensaje(data?.length
+        ? 'Resultado registrado y confirmado'
+        : 'El resultado ya fue registrado o no se pudo modificar. Se actualizará la partida.')
+      await cargarMatches(rondaSeleccionada, eventoActual.id)
+    } catch (error) {
+      setMensaje(`No se pudo registrar el resultado: ${error.message}`)
+    } finally {
+      setReportandoId(null)
+    }
   }
 
   const getMedalla = (posicion) => {

@@ -16,8 +16,7 @@ export default function MatchCard({ match, onReport, userId, reportando = false,
   const esJugador1 = user === j1
   const esJugador2 = user === j2
   const puedeReportar = esJugador1 || esJugador2
-  const yaReporto = (esJugador1 && match.ganador_reportado_1) || (esJugador2 && match.ganador_reportado_2)
-  const bloqueado = rondaFinalizada || yaReporto || match.confirmado
+  const bloqueado = rondaFinalizada || match.confirmado
 
   const getEstadoColor = () => {
     if (match.confirmado) return 'bg-green-500/10 text-green-400 border-green-500/40'
@@ -123,6 +122,11 @@ export default function MatchCard({ match, onReport, userId, reportando = false,
 
         {/* Botones de reporte */}
         {!esBye && puedeReportar && !bloqueado && (
+          <p className="text-center text-xs text-muted mt-3">
+            El resultado quedará confirmado al registrarlo.
+          </p>
+        )}
+        {!esBye && puedeReportar && !bloqueado && (
           <div className="flex gap-2 mt-3">
             <button
               onClick={() => onReport(match, j1)}
@@ -150,10 +154,6 @@ export default function MatchCard({ match, onReport, userId, reportando = false,
 
         {!esBye && !puedeReportar && (
           <p className="text-center text-xs text-muted mt-2">No participas en este match</p>
-        )}
-
-        {!esBye && yaReporto && !match.confirmado && (
-          <p className="text-center text-xs text-yellow-400 mt-2">Esperando confirmación del rival</p>
         )}
 
         {esBye && (
