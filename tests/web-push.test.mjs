@@ -12,7 +12,7 @@ function browserHarness() {
   const subscription = { toJSON: () => ({ endpoint: 'https://fcm.googleapis.com/example' }), unsubscribe: async () => calls.push('unsubscribe') }
   const registration = { pushManager: { getSubscription: async () => subscription } }
   const context = {
-    Notification: { requestPermission: async () => 'granted' },
+    Notification: { permission: 'granted', requestPermission: async () => 'granted' },
     supabase: { rpc: async (name, args) => {
       calls.push([name, args])
       return name === 'get_web_push_public_key' ? { data: Buffer.alloc(65, 1).toString('base64url') } : { error: null }
@@ -65,6 +65,33 @@ test('fallo de baja remota conserva el identificador para reintentar', async () 
   context.supabase.rpc = async () => ({ error: { message: 'offline' } })
   await assert.rejects(context.disableWebPush(), /desactivar/)
   assert.equal(values.size, 1)
+})
+
+test('el estado se recupera al reabrir y detecta la baja y los permisos revocados', async () => {
+  const { context } = browserHarness()
+  assert.equal(await context.getWebPushStatus(), false)
+  await context.enableWebPush('123')
+  assert.equal(await context.getWebPushStatus(), true)
+  context.Notification.permission = 'denied'
+  assert.equal(await context.getWebPushStatus(), false)
+  context.Notification.permission = 'granted'
+  await context.disableWebPush()
+  assert.equal(await context.getWebPushStatus(), false)
+})
+
+test('una suscripción desaparecida no aparece como activa', async () => {
+  const { context } = browserHarness()
+  await context.enableWebPush('123')
+  context.navigator.serviceWorker.getRegistration = async () => undefined
+  assert.equal(await context.getWebPushStatus(), false)
+})
+
+test('fallo al guardar una nueva instalación no la muestra como activa', async () => {
+  const { context } = browserHarness()
+  const rpc = context.supabase.rpc
+  context.supabase.rpc = async (name, args) => name === 'save_web_push_subscription' ? { error: { message: 'offline' } } : rpc(name, args)
+  await assert.rejects(context.enableWebPush('123'), /guardar/)
+  assert.equal(await context.getWebPushStatus(), false)
 })
 
 test('service worker procesa payload inválido y abre solo el torneo del mismo sitio', async () => {
