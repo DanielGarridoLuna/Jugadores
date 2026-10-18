@@ -26,5 +26,7 @@ for (const [name, value] of Object.entries(secrets)) {
 }
 sql += fs.readFileSync(path.join(root, 'supabase/migrations/202610180002_web_push_vault.sql'), 'utf8')
 sql += '\nCOMMIT;\n'
+sql += '\n' + fs.readFileSync(path.join(root, 'supabase/migrations/202610180003_disable_push_tests.sql'), 'utf8')
+sql += '\n' + fs.readFileSync(path.join(root, 'supabase/migrations/202610180004_standings_web_push.sql'), 'utf8')
 fs.writeFileSync(output, sql, { mode: 0o600 })
 console.log('SQL de activación preparado en supabase/.env.web-push-setup.sql. No se imprimieron secretos.')

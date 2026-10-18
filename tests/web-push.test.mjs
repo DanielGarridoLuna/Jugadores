@@ -67,14 +67,6 @@ test('fallo de baja remota conserva el identificador para reintentar', async () 
   assert.equal(values.size, 1)
 })
 
-test('la prueba requiere una instalación activada', async () => {
-  const { context, calls } = browserHarness()
-  await assert.rejects(context.testWebPush(), /Activa/)
-  await context.enableWebPush('123')
-  await context.testWebPush()
-  assert.equal(calls.at(-1)[0], 'test_web_push_subscription')
-})
-
 test('service worker procesa payload inválido y abre solo el torneo del mismo sitio', async () => {
   const handlers = {}
   let shown, opened, pending

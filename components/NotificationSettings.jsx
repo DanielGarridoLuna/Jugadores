@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useSyncExternalStore } from 'react'
-import { disableWebPush, enableWebPush, testWebPush } from '@/lib/web-push'
+import { disableWebPush, enableWebPush } from '@/lib/web-push'
 
 const subscribe = () => () => {}
 const getSupported = () => window.isSecureContext && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window
@@ -18,12 +18,9 @@ export default function NotificationSettings({ playerId }) {
       if (action === 'enable') {
         await enableWebPush(playerId)
         setMessage('Avisos activados en este dispositivo.')
-      } else if (action === 'disable') {
+      } else {
         await disableWebPush()
         setMessage('Avisos desactivados en este dispositivo.')
-      } else {
-        await testWebPush()
-        setMessage('Prueba solicitada. Deberías recibir una notificación en unos segundos.')
       }
     } catch (error) {
       setMessage(error.message)
@@ -39,7 +36,6 @@ export default function NotificationSettings({ playerId }) {
       {supported ? (
         <div className="flex flex-wrap items-center gap-3 mt-3">
           <button type="button" className="btn-neon disabled:opacity-50" disabled={busy} onClick={() => perform('enable')}>{busy ? 'Guardando...' : 'Activar avisos'}</button>
-          <button type="button" className="text-sm text-neon disabled:opacity-50" disabled={busy} onClick={() => perform('test')}>Enviar prueba</button>
           <button type="button" className="text-sm text-muted disabled:opacity-50" disabled={busy} onClick={() => perform('disable')}>Desactivar</button>
         </div>
       ) : <p className="text-sm text-muted mt-2">Este navegador no permite notificaciones push. En iPhone, abre la app desde la pantalla de inicio.</p>}
